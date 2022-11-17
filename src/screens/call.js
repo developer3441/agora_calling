@@ -23,12 +23,11 @@ const Call = () => {
     const route = useRoute()
 
 
+
     const appId = '1a4bc8b224794fcf976d6d456d3beacd';
     const channelName = route.params.channelName;
     const token = route.params.token;
     const uid = route.params.id;
-
-
 
 
     const agoraEngineRef = useRef(); // Agora engine instance
@@ -69,7 +68,7 @@ const Call = () => {
                 ChannelProfileType.ChannelProfileCommunication,
             );
             agoraEngineRef.current?.startPreview();
-            agoraEngineRef.current?.joinChannelWithUserAccount(token, channelName, uid, {
+            agoraEngineRef.current.joinChannelWithUserAccount(token, channelName, uid, {
                 clientRoleType: ClientRoleType.ClientRoleBroadcaster,
             });
         } catch (e) {
@@ -109,7 +108,7 @@ const Call = () => {
             endCall();
 
         } catch (e) {
-            console.log(e);
+            console.log('++++++>', e);
         }
     };
 
@@ -136,7 +135,12 @@ const Call = () => {
         try {
             // use the helper function to get permissions
             await getPermission();
-            agoraEngineRef.current = createAgoraRtcEngine();
+            try {
+                agoraEngineRef.current = createAgoraRtcEngine();
+            } catch (error) {
+                console.log('erroorr', error)
+            }
+
             const agoraEngine = agoraEngineRef.current;
             await agoraEngine.registerEventHandler({
                 onJoinChannelSuccess: () => {
@@ -162,7 +166,7 @@ const Call = () => {
             join()
 
         } catch (e) {
-            console.log(e);
+            console.log('------->___', e);
         }
     };
 

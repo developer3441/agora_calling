@@ -34,14 +34,14 @@ const Contacts = () => {
             await firestore().collection('calling').doc(item.id).update(
                 {
                     channelName: 'first',
-                    token: '007eJxTYLj3X3XPlf0LHaykzd90lBiHFD397nBOsVH0K6N6HhfH11AFBsNEk6RkiyQjIxNzS5O05DRLc7MUsxQTU7MU46TUxOSU9e6lyQ2BjAwf33xnZGSAQBCflSEts6i4hIEBAJUsITk=',
+                    token: '007eJxTYFgicP6Mhcdx0cRZbYdrm4qZ/5stFjn1NjiOt23dqSOBfXEKDIaJJknJFklGRibmliZpyWmW5mYpZikmpmYpxkmpickpkfPKkhsCGRkaX/9mYIRCEJ+VIS2zqLiEgQEAnjchag==',
                     caller: auth().currentUser.email,
                     callee: item.id,
                     calling: true
                 }
             )
 
-            navigation.navigate('Call', { id: auth().currentUser.email, channelName: 'first', token: '007eJxTYLj3X3XPlf0LHaykzd90lBiHFD397nBOsVH0K6N6HhfH11AFBsNEk6RkiyQjIxNzS5O05DRLc7MUsxQTU7MU46TUxOSU9e6lyQ2BjAwf33xnZGSAQBCflSEts6i4hIEBAJUsITk=' })
+            navigation.navigate('Call', { id: auth().currentUser.email, channelName: 'temp', token: '007eJxTYKjzDll6d0/OFbbfagrygie/mjRpz3Beu7Ruxdv17zxFW1YrMBgmmiQlWyQZGZmYW5qkJadZmpulmKWYmJqlGCelJian3F1YltwQyMiwI+YSKyMDBIL4LAwlqbkFDAwAmdUhWQ==' })
         } catch (error) {
             console.log(error)
         }
@@ -52,7 +52,7 @@ const Contacts = () => {
 
     const acceptCall = async () => {
         setIncoming(false)
-        navigation.navigate('Call', { id: auth().currentUser.email, channelName: 'first', token: '007eJxTYLj3X3XPlf0LHaykzd90lBiHFD397nBOsVH0K6N6HhfH11AFBsNEk6RkiyQjIxNzS5O05DRLc7MUsxQTU7MU46TUxOSU9e6lyQ2BjAwf33xnZGSAQBCflSEts6i4hIEBAJUsITk=' })
+        navigation.navigate('Call', { id: auth().currentUser.email, channelName: 'temp', token: '007eJxTYKjzDll6d0/OFbbfagrygie/mjRpz3Beu7Ruxdv17zxFW1YrMBgmmiQlWyQZGZmYW5qkJadZmpulmKWYmJqlGCelJian3F1YltwQyMiwI+YSKyMDBIL4LAwlqbkFDAwAmdUhWQ==' })
     }
 
 
