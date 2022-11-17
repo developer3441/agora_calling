@@ -2,6 +2,24 @@ import { useState, useRef, useEffect } from 'react'
 import AgoraRTC from "agora-rtc-sdk-ng"
 import { GlobalProvider, useClient, useStart, useUsers } from './GlobalContext';
 import Contacts from './contacts';
+import { collection, doc, setDoc, getDocs, onSnapshot } from "firebase/firestore";
+import { useAuthState } from 'react-firebase-hooks/auth';
+import { firestore, auth } from './firebase'
+import Modal from 'react-modal';
+import axios from 'axios'
+
+const customStyles = {
+    content: {
+        top: '50%',
+        left: '50%',
+        right: 'auto',
+        bottom: 'auto',
+        marginRight: '-50%',
+        transform: 'translate(-50%, -50%)',
+        backgroundColor: 'tomato'
+    },
+};
+
 
 const Call = () => {
     return (
@@ -11,26 +29,44 @@ const Call = () => {
     );
 }
 
+
+
+
 const Content = () => {
+
+
+
+
     const setUsers = useUsers()[1]
     const [start, setStart] = useStart()
     const rtc = useClient()
+
+    const [contacts, setContacts] = useState([])
+    const [incoming, setIncoming] = useState(false);
+    const [user] = useAuthState(auth);
+    const [channel, setChannel] = useState(null)
+    const [callToken, setCallToken] = useState(null)
+    const [caller, setCaller] = useState(null)
+    const [callee, setCallee] = useState(null)
 
 
     const options = {
         // Pass your app ID here.
         appId: "1a4bc8b224794fcf976d6d456d3beacd",
         // Set the channel name.
-        channel: "second",
+        channel: "first",
         // Pass a token if your project enables the App Certificate.
-        token: '007eJxTYNiyq2LeyolMd+ptOEy+Gr3defGlS5jNtIcR8/8q/95iaPFXgcEw0SQp2SLJyMjE3NIkLTnN0twsxSzFxNQsxTgpNTE55cLEkuSGQEaGzVmlrIwMEAjiszEUpybn56UwMAAAUgcjJg==',
-
+        token: '007eJxTYLj3X3XPlf0LHaykzd90lBiHFD397nBOsVH0K6N6HhfH11AFBsNEk6RkiyQjIxNzS5O05DRLc7MUsxQTU7MU46TUxOSU9e6lyQ2BjAwf33xnZGSAQBCflSEts6i4hIEBAJUsITk=',
     };
 
-    let init = async (name, appId, id) => {
+    let init = async (name, token, id, appId) => {
+
+        console.log(name, ":", token, ":", id, ":", options.appId)
+
+
         rtc.current.client = AgoraRTC.createClient({ mode: "rtc", codec: "vp8" });
         initClientEvents()
-        const uid = await rtc.current.client.join(appId, name, options.token, id);
+        const uid = await rtc.current.client.join(options.appId, name, token, id);
         // Create an audio track from the audio sampled by a microphone.
         rtc.current.localAudioTrack = await AgoraRTC.createMicrophoneAudioTrack();
         // Create a video track from the video captured by a camera.
@@ -98,46 +134,182 @@ const Content = () => {
 
 
 
+    const getContacts = async () => {
+        try {
+            let tempArr = []
+            const querySnapshot = await getDocs(collection(firestore, "calling"))
+            querySnapshot.forEach((doc) => {
+                tempArr.push({ ...doc.data(), id: doc.id })
+            });
+            setContacts(tempArr)
+        } catch (error) {
+            console.log('-------------------->', error)
+        }
+    }
+
+
+    const dialCall = async (item, type) => {
+
+
+        try {
+
+
+
+            const docData = {
+                callee: item?.id,
+                caller: user?.email,
+                type: type,
+                calling: true,
+                channelName: 'first',
+                token: '007eJxTYLj3X3XPlf0LHaykzd90lBiHFD397nBOsVH0K6N6HhfH11AFBsNEk6RkiyQjIxNzS5O05DRLc7MUsxQTU7MU46TUxOSU9e6lyQ2BjAwf33xnZGSAQBCflSEts6i4hIEBAJUsITk='
+            }
+            await setDoc(doc(firestore, "calling", user?.email), docData);
+            await setDoc(doc(firestore, "calling", item?.id), docData);
+        } catch (error) {
+            console.log(error)
+        }
+    }
+
+
+    const acceptCall = async () => {
+        setIncoming(false)
+        init(channel, callToken, user?.email)
+    }
+
+
+
+    const endCall = async () => {
+
+        console.log('---------endcall', caller, callee)
+
+        try {
+            const docData = {
+                callee: null,
+                caller: null,
+                type: null,
+                calling: false,
+                channelName: null,
+                token: null
+            }
+
+            try {
+                await setDoc(doc(firestore, "calling", caller), docData);
+            } catch (error) {
+                console.log(error)
+            }
+            try {
+                await setDoc(doc(firestore, "calling", callee), docData);
+            } catch (error) {
+                console.log(error)
+            }
+
+
+        } catch (error) {
+            console.log(error)
+        }
+    }
+
     const leaveChannel = async () => {
 
-        console.log('leave channel')
+        console.log('----------->in leave Channel')
+
         // Destroy the local audio and video tracks.
-        await rtc.current.localVideoTrack.setEnabled(false)
-        await rtc.current.localAudioTrack.setEnabled(false)
-        await rtc.current.localAudioTrack.close();
-        await rtc.current.localVideoTrack.close();
-        await rtc.current.client.leave();
+        await rtc?.current?.localVideoTrack?.setEnabled(false)
+        await rtc?.current?.localAudioTrack?.setEnabled(false)
+        await rtc?.current?.localAudioTrack?.close();
+        await rtc?.current?.localVideoTrack?.close();
+        await rtc?.current?.client?.leave();
         setUsers([])
         setStart(false)
     }
+
+    useEffect(() => {
+        getContacts()
+        const unsub = onSnapshot(doc(firestore, "calling", user?.email), (doc) => {
+            let data = { id: doc?.id, ...doc.data() }
+            console.log("Current data: ", data);
+            if (data?.calling === true) {
+                if (data.caller === user?.email) {
+
+                    init(data?.channelName, data?.token, user?.email)
+                    setCaller(data?.caller)
+                    setCallee(data?.callee)
+
+                } else if (data.callee === user?.email) {
+                    setIncoming(true)
+                    setChannel(data?.channelName)
+                    setCallToken(data?.token)
+                    setCaller(data?.caller)
+                    setCallee(data?.callee)
+
+                }
+            } else if (data?.calling === false) {
+
+
+                setIncoming(false)
+                setChannel(null)
+                setCallToken(null)
+                setCaller(null)
+                setCallee(null)
+                console.log('====>>>>>>>>>>>.start outside', start)
+
+                // if (start === true) {
+                //     console.log('====>>>>>>>>>>>.start', start)
+                leaveChannel()
+                // }
+
+            }
+
+        });
+        return unsub;
+
+
+    }, [])
+
 
 
 
 
     return (
         <div className="App">
-            {start && <Videos />}
-            {!start && <Contacts leaveChannel={leaveChannel} initFunc={init} />}
+            {start && <Videos endCall={endCall} />}
+            {!start && <Contacts contacts={contacts} dialCall={dialCall} initFunc={init} />}
+
+            <Modal
+                isOpen={incoming}
+                // onAfterOpen={afterOpenModal}
+                // onRequestClose={closeModal}
+                style={customStyles}
+
+            >
+                <h2>{caller}</h2>
+                <button onClick={() => acceptCall()}>Accept</button>
+                <button onClick={() => endCall()}>Decline</button>
+
+            </Modal>
+
             {/* {!start && <ChannelForm initFunc={init} />} */}
         </div>
     )
 }
 
 
-const Videos = () => {
+const Videos = (props) => {
+
+
 
     const users = useUsers()[0]
 
     return (
         <div id='videos'>
-            {users.length && users.map((user) => <Video key={user.uid} user={user} />)}
+            {users.length && users.map((user) => <Video endCall={props?.endCall} key={user.uid} user={user} />)}
         </div>
     )
 
 }
 
 
-export const Video = ({ user }) => {
+export const Video = ({ user, endCall }) => {
 
     const vidDiv = useRef(null)
 
@@ -159,13 +331,13 @@ export const Video = ({ user }) => {
 
     return (
         <div className='vid' ref={vidDiv} >
-            <Controls user={user} />
+            <Controls endCall={endCall} user={user} />
         </div>
     )
 }
 
 
-export const Controls = ({ user }) => {
+export const Controls = ({ user, endCall }) => {
 
     const setStart = useStart()[1]
     const setUsers = useUsers()[1]
@@ -211,7 +383,7 @@ export const Controls = ({ user }) => {
         <div className='controls'>
             {<p className={user.audio ? 'on' : ''} onClick={() => user.client && mute('audio', user.uid)}>Mic</p>}
             {<p className={user.video ? 'on' : ''} onClick={() => user.client && mute('video', user.uid)}>Video</p>}
-            {user.client && <p onClick={() => leaveChannel()}>Quit</p>}
+            {user.client && <p onClick={() => endCall()}>Quit</p>}
         </div>
     )
 }
