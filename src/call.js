@@ -54,19 +54,19 @@ const Content = () => {
         // Pass your app ID here.
         appId: "1a4bc8b224794fcf976d6d456d3beacd",
         // Set the channel name.
-        channel: "first",
-        // Pass a token if your project enables the App Certificate.
-        token: '007eJxTYLj3X3XPlf0LHaykzd90lBiHFD397nBOsVH0K6N6HhfH11AFBsNEk6RkiyQjIxNzS5O05DRLc7MUsxQTU7MU46TUxOSU9e6lyQ2BjAwf33xnZGSAQBCflSEts6i4hIEBAJUsITk=',
+        // channel: "first",
+        // // Pass a token if your project enables the App Certificate.
+        // token: '007eJxTYLj3X3XPlf0LHaykzd90lBiHFD397nBOsVH0K6N6HhfH11AFBsNEk6RkiyQjIxNzS5O05DRLc7MUsxQTU7MU46TUxOSU9e6lyQ2BjAwf33xnZGSAQBCflSEts6i4hIEBAJUsITk=',
     };
 
-    let init = async (name, token, id, appId) => {
+    let init = async (name, token, id,) => {
 
-        console.log(name, ":", token, ":", id, ":", options.appId)
+
 
 
         rtc.current.client = AgoraRTC.createClient({ mode: "rtc", codec: "vp8" });
         initClientEvents()
-        const uid = await rtc.current.client.join(options.appId, name, token, id);
+        const uid = await rtc.current.client.join(process.env.REACT_APP_APPID, name, token, id);
         // Create an audio track from the audio sampled by a microphone.
         rtc.current.localAudioTrack = await AgoraRTC.createMicrophoneAudioTrack();
         // Create a video track from the video captured by a camera.
@@ -151,20 +151,76 @@ const Content = () => {
     const dialCall = async (item, type) => {
 
 
+        console.log(process.env.REACT_APP_APPID)
+
+        const callerTokenInfo = {
+            "channelName": `${user?.email}${item?.id}`,
+            "id": user?.email,
+            "participantRole": "publisher"
+        }
+        const calleeTokenInfo = {
+            "channelName": `${user?.email}${item?.id}`,
+            "id": item?.id,
+            "participantRole": "subscriber"
+        }
+
+
+
+
+        var callerConfig = {
+            method: 'post',
+            url: `${process.env.REACT_APP_BACKEND_LINK}/generate_token`,
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            data: callerTokenInfo
+        };
+
+        var calleeConfig = {
+            method: 'post',
+            url: `${process.env.REACT_APP_BACKEND_LINK}/generate_token`,
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            data: calleeTokenInfo
+
+        };
+
+
+
+
         try {
 
+            let callerResponse = await axios(callerConfig)
+            callerResponse = callerResponse?.data
+            console.log(callerResponse);
 
 
-            const docData = {
+            let calleeResponse = await axios(calleeConfig)
+            calleeResponse = calleeResponse?.data
+            console.log(calleeResponse);
+
+
+
+            const callerData = {
                 callee: item?.id,
                 caller: user?.email,
                 type: type,
                 calling: true,
-                channelName: 'first',
-                token: '007eJxTYLj3X3XPlf0LHaykzd90lBiHFD397nBOsVH0K6N6HhfH11AFBsNEk6RkiyQjIxNzS5O05DRLc7MUsxQTU7MU46TUxOSU9e6lyQ2BjAwf33xnZGSAQBCflSEts6i4hIEBAJUsITk='
+                channelName: callerResponse?.channelName,
+                token: callerResponse?.token
             }
-            await setDoc(doc(firestore, "calling", user?.email), docData);
-            await setDoc(doc(firestore, "calling", item?.id), docData);
+            const calleeData = {
+                callee: item?.id,
+                caller: user?.email,
+                type: type,
+                calling: true,
+                channelName: calleeResponse?.channelName,
+                token: calleeResponse?.token
+            }
+
+            await setDoc(doc(firestore, "calling", user?.email), callerData);
+            await setDoc(doc(firestore, "calling", item?.id), calleeData);
         } catch (error) {
             console.log(error)
         }
