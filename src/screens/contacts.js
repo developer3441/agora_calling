@@ -10,9 +10,11 @@ const Contacts = () => {
 
     const [contacts, setContacts] = useState([])
     const navigation = useNavigation()
+    const [caller, setCaller] = useState(null)
     const [callee, setCallee] = useState(null)
     const [incoming, setIncoming] = useState(false)
-    const [callingTo, setCallingTo] = useState(null)
+    const [channel, setChannel] = useState(null)
+    const [callToken, setCallToken] = useState(null)
 
 
 
@@ -29,19 +31,26 @@ const Contacts = () => {
 
 
 
-    const callOther = async (item) => {
+    const callOther = async (item, type = 'audio') => {
         try {
+
+            const docData = {
+                callee: item?.id,
+                caller: auth().currentUser?.email,
+                type: type,
+                calling: true,
+                channelName: 'first',
+                token: '007eJxTYBD77lz02FMu1qHc/5CezGe7ZZ6rGU52/VzRwL/wQlOo+1sFBsNEk6RkiyQjIxNzS5O05DRLc7MUsxQTU7MU46TUxOSUX6blyQ2BjAxTdvexMDJAIIjPypCWWVRcwsAAAGP9IJ4='
+            }
+
             await firestore().collection('calling').doc(item.id).update(
-                {
-                    channelName: 'first',
-                    token: '007eJxTYFgicP6Mhcdx0cRZbYdrm4qZ/5stFjn1NjiOt23dqSOBfXEKDIaJJknJFklGRibmliZpyWmW5mYpZikmpmYpxkmpickpkfPKkhsCGRkaX/9mYIRCEJ+VIS2zqLiEgQEAnjchag==',
-                    caller: auth().currentUser.email,
-                    callee: item.id,
-                    calling: true
-                }
+                docData
+            )
+            await firestore().collection('calling').doc(auth().currentUser.email).update(
+                docData
             )
 
-            navigation.navigate('Call', { id: auth().currentUser.email, channelName: 'temp', token: '007eJxTYKjzDll6d0/OFbbfagrygie/mjRpz3Beu7Ruxdv17zxFW1YrMBgmmiQlWyQZGZmYW5qkJadZmpulmKWYmJqlGCelJian3F1YltwQyMiwI+YSKyMDBIL4LAwlqbkFDAwAmdUhWQ==' })
+            // navigation.navigate('Call', { id: auth().currentUser.email, channelName: 'temp', token: '007eJxTYKjzDll6d0/OFbbfagrygie/mjRpz3Beu7Ruxdv17zxFW1YrMBgmmiQlWyQZGZmYW5qkJadZmpulmKWYmJqlGCelJian3F1YltwQyMiwI+YSKyMDBIL4LAwlqbkFDAwAmdUhWQ==' })
         } catch (error) {
             console.log(error)
         }
@@ -52,22 +61,35 @@ const Contacts = () => {
 
     const acceptCall = async () => {
         setIncoming(false)
-        navigation.navigate('Call', { id: auth().currentUser.email, channelName: 'temp', token: '007eJxTYKjzDll6d0/OFbbfagrygie/mjRpz3Beu7Ruxdv17zxFW1YrMBgmmiQlWyQZGZmYW5qkJadZmpulmKWYmJqlGCelJian3F1YltwQyMiwI+YSKyMDBIL4LAwlqbkFDAwAmdUhWQ==' })
+        navigation.navigate('Call', { id: auth().currentUser.email, channelName: channel, token: callToken, caller: caller, callee: callee })
     }
 
 
     const declineCall = async () => {
 
         try {
-            await firestore().collection('calling').doc(auth().currentUser.email).update(
-                {
-                    channelName: null,
-                    token: null,
-                    caller: null,
-                    callee: null,
-                    calling: false
-                }
-            )
+
+            const docData = {
+                callee: null,
+                caller: null,
+                type: null,
+                calling: false,
+                channelName: null,
+                token: null
+            }
+
+            try {
+                await firestore().collection('calling').doc(caller).update(docData)
+            } catch (error) {
+                console.log('error in removing caller', error)
+            }
+
+            try {
+                await firestore().collection('calling').doc(callee).update(docData)
+            } catch (error) {
+                console.log('error in removing callee', callee)
+            }
+
 
         } catch (error) {
             console.log(error)
@@ -82,13 +104,27 @@ const Contacts = () => {
             .doc(auth().currentUser.email)
             .onSnapshot(documentSnapshot => {
                 console.log('User data: ', { ...documentSnapshot.data(), id: documentSnapshot.id });
-                if (documentSnapshot?.data()?.calling === true) {
-                    if (documentSnapshot.id === auth().currentUser.email) {
-                        setCallee({ ...documentSnapshot.data(), id: documentSnapshot.id })
+
+                let data = { id: documentSnapshot.id, ...documentSnapshot.data() };
+                if (data?.calling === true) {
+                    if (data?.caller === auth().currentUser.email) {
+
+                        navigation.navigate('Call', { id: auth().currentUser.email, channelName: data?.channelName, token: data?.token, caller: data?.caller, callee: data?.callee })
+
+                    } else if (data.callee === auth().currentUser?.email) {
+
+                        setCaller(data.caller)
+                        setCallee(data.callee)
+                        setChannel(data?.channelName)
+                        setCallToken(data?.token)
                         setIncoming(true)
                     }
 
                 } else {
+                    setCaller(null)
+                    setCallee(null)
+                    setChannel(null)
+                    setCallToken(null)
                     setIncoming(false)
                 }
 

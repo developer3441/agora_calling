@@ -28,6 +28,8 @@ const Call = () => {
     const channelName = route.params.channelName;
     const token = route.params.token;
     const uid = route.params.id;
+    const caller = route.params.caller;
+    const callee = route.params.callee;
 
 
     const agoraEngineRef = useRef(); // Agora engine instance
@@ -80,33 +82,45 @@ const Call = () => {
     const endCall = async () => {
 
         console.log('endCall');
+        console.log('endCall');
         try {
-            await firestore().collection('calling').doc(auth().currentUser.email).update(
-                {
-                    channelName: null,
-                    token: null,
-                    callee: null,
-                    calling: false
-                }
-            )
 
-            navigation.goBack();
+            const docData = {
+                callee: null,
+                caller: null,
+                type: null,
+                calling: false,
+                channelName: null,
+                token: null
+            }
+
+            try {
+                await firestore().collection('calling').doc(caller).update(docData)
+            } catch (error) {
+                console.log('error in removing caller', error)
+            }
+
+            try {
+                await firestore().collection('calling').doc(callee).update(docData)
+            } catch (error) {
+                console.log('error in removing callee', callee)
+            }
+
+            navigation.goBack()
 
         } catch (error) {
-            console.log('-->', error)
+            console.log(error)
         }
     }
 
 
     const leave = () => {
         try {
-
             agoraEngineRef.current?.leaveChannel();
             setRemoteUid(0);
             setIsJoined(false);
             showMessage('left');
             endCall();
-
         } catch (e) {
             console.log('++++++>', e);
         }
@@ -114,11 +128,12 @@ const Call = () => {
 
 
 
+
+
     useEffect(() => {
         if (remoteLeft === true) {
             console.log('User left remote')
             leave()
-
         }
     }, [remoteLeft])
 
@@ -129,6 +144,29 @@ const Call = () => {
     useEffect(() => {
         // Initialize Agora engine when the app starts
         setupVideoSDKEngine();
+
+
+        const subscriber = firestore()
+            .collection('calling')
+            .doc(auth().currentUser.email)
+            .onSnapshot(documentSnapshot => {
+
+                let data = { id: documentSnapshot.id, ...documentSnapshot.data() };
+
+                if (data?.calling === false) {
+
+                    // leave()
+
+
+                }
+
+
+            });
+
+        // Stop listening for updates when no longer required
+        return () => subscriber();
+
+
     });
 
     const setupVideoSDKEngine = async () => {
