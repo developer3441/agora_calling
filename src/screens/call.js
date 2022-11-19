@@ -30,6 +30,7 @@ const Call = () => {
     const uid = route.params.id;
     const caller = route.params.caller;
     const callee = route.params.callee;
+    const [move, setMove] = useState(false)
 
 
     const agoraEngineRef = useRef(); // Agora engine instance
@@ -81,7 +82,7 @@ const Call = () => {
 
     const endCall = async () => {
 
-        console.log('endCall');
+
         console.log('endCall');
         try {
 
@@ -106,7 +107,7 @@ const Call = () => {
                 console.log('error in removing callee', callee)
             }
 
-            navigation.goBack()
+            // navigation.goBack()
 
         } catch (error) {
             console.log(error)
@@ -114,28 +115,39 @@ const Call = () => {
     }
 
 
-    const leave = () => {
+    const leave = async () => {
         try {
-            agoraEngineRef.current?.leaveChannel();
+            // console.log('calling leave')
+            await agoraEngineRef.current?.leaveChannel();
             setRemoteUid(0);
             setIsJoined(false);
             showMessage('left');
-            endCall();
+
+            // navigation.goBack()
+            // endCall();
         } catch (e) {
             console.log('++++++>', e);
         }
     };
 
 
-
-
-
     useEffect(() => {
-        if (remoteLeft === true) {
-            console.log('User left remote')
-            leave()
+        if (message === 'left') {
+            navigation.goBack()
+            console.log('++++++++++++++++ navigate back')
+
         }
-    }, [remoteLeft])
+    }, [message])
+
+
+
+
+    // useEffect(() => {
+    //     if (remoteLeft === true) {
+    //         console.log('User left remote')
+    //         // leave()
+    //     }
+    // }, [remoteLeft])
 
 
 
@@ -143,6 +155,10 @@ const Call = () => {
 
     useEffect(() => {
         // Initialize Agora engine when the app starts
+
+
+
+
         setupVideoSDKEngine();
 
 
@@ -150,24 +166,21 @@ const Call = () => {
             .collection('calling')
             .doc(auth().currentUser.email)
             .onSnapshot(documentSnapshot => {
-
                 let data = { id: documentSnapshot.id, ...documentSnapshot.data() };
 
                 if (data?.calling === false) {
-
-                    // leave()
-
-
+                    console.log('in listener')
+                    leave()
                 }
 
 
             });
 
         // Stop listening for updates when no longer required
+
         return () => subscriber();
 
-
-    });
+    }, []);
 
     const setupVideoSDKEngine = async () => {
         try {
@@ -214,10 +227,10 @@ const Call = () => {
         <SafeAreaView style={styles.main}>
             <Text style={styles.head}>Agora Video Calling Quickstart</Text>
             <View style={styles.btnContainer}>
-                <Text onPress={join} style={styles.button}>
+                <Text onPress={() => setRemoteLeft(!remoteLeft)} style={styles.button}>
                     Join
                 </Text>
-                <Text onPress={leave} style={styles.button}>
+                <Text onPress={endCall} style={styles.button}>
                     Leave
                 </Text>
             </View>

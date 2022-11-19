@@ -40,7 +40,7 @@ const Contacts = () => {
                 type: type,
                 calling: true,
                 channelName: 'first',
-                token: '007eJxTYBD77lz02FMu1qHc/5CezGe7ZZ6rGU52/VzRwL/wQlOo+1sFBsNEk6RkiyQjIxNzS5O05DRLc7MUsxQTU7MU46TUxOSUX6blyQ2BjAxTdvexMDJAIIjPypCWWVRcwsAAAGP9IJ4='
+                token: '007eJxTYFizS+svxyqf/wmyR3osuUT/TVoyTfnNdp6zxR+8U9bqLPNTYDBMNElKtkgyMjIxtzRJS06zNDdLMUsxMTVLMU5KTUxO6ZpWkdwQyMjw7F43EyMDBIL4rAxpmUXFJQwMALmlIbI='
             }
 
             await firestore().collection('calling').doc(item.id).update(
