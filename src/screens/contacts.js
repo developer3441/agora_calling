@@ -4,6 +4,7 @@ import auth from '@react-native-firebase/auth';
 import firestore from '@react-native-firebase/firestore';
 import { useNavigation } from '@react-navigation/native';
 import Modal from "react-native-modal";
+// import axios from 'axios'
 
 const Contacts = () => {
 
@@ -32,28 +33,84 @@ const Contacts = () => {
 
 
     const callOther = async (item, type = 'audio') => {
+
+        const userEmail = auth()?.currentUser?.email
+
+
+        const callerTokenInfo = {
+            "channelName": `${userEmail}${item?.id}`,
+            "id": userEmail,
+            "participantRole": "publisher"
+        }
+        const calleeTokenInfo = {
+            "channelName": `${userEmail}${item?.id}`,
+            "id": item?.id,
+            "participantRole": "subscriber"
+        }
+
+
+
+
+        var callerConfig = {
+            method: 'post',
+            url: `http://192.168.18.7:500/generate_token`,
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            data: callerTokenInfo
+        };
+
+        var calleeConfig = {
+            method: 'post',
+            url: `http://192.168.18.7:500/generate_token`,
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            data: calleeTokenInfo
+
+        };
+
+
+
+
         try {
 
-            const docData = {
-                callee: item?.id,
-                caller: auth().currentUser?.email,
-                type: type,
-                calling: true,
-                channelName: 'first',
-                token: '007eJxTYFizS+svxyqf/wmyR3osuUT/TVoyTfnNdp6zxR+8U9bqLPNTYDBMNElKtkgyMjIxtzRJS06zNDdLMUsxMTVLMU5KTUxO6ZpWkdwQyMjw7F43EyMDBIL4rAxpmUXFJQwMALmlIbI='
-            }
+            // let callerResponse = await axios(callerConfig)
+            // callerResponse = callerResponse?.data
+            // console.log('--------->caller Response', callerResponse);
 
-            await firestore().collection('calling').doc(item.id).update(
-                docData
-            )
-            await firestore().collection('calling').doc(auth().currentUser.email).update(
-                docData
-            )
 
-            // navigation.navigate('Call', { id: auth().currentUser.email, channelName: 'temp', token: '007eJxTYKjzDll6d0/OFbbfagrygie/mjRpz3Beu7Ruxdv17zxFW1YrMBgmmiQlWyQZGZmYW5qkJadZmpulmKWYmJqlGCelJian3F1YltwQyMiwI+YSKyMDBIL4LAwlqbkFDAwAmdUhWQ==' })
+            // let calleeResponse = await axios(calleeConfig)
+            // calleeResponse = calleeResponse?.data
+            // console.log('--------->callee Response', calleeResponse);
         } catch (error) {
-            console.log(error)
+            console.log('error in token generation--->>>', error)
         }
+
+
+
+        // try {
+
+        //     const docData = {
+        //         callee: item?.id,
+        //         caller: auth().currentUser?.email,
+        //         type: type,
+        //         calling: true,
+        //         channelName: 'first',
+        //         token: '007eJxTYFizS+svxyqf/wmyR3osuUT/TVoyTfnNdp6zxR+8U9bqLPNTYDBMNElKtkgyMjIxtzRJS06zNDdLMUsxMTVLMU5KTUxO6ZpWkdwQyMjw7F43EyMDBIL4rAxpmUXFJQwMALmlIbI='
+        //     }
+
+        //     await firestore().collection('calling').doc(item.id).update(
+        //         docData
+        //     )
+        //     await firestore().collection('calling').doc(auth().currentUser.email).update(
+        //         docData
+        //     )
+
+        //     // navigation.navigate('Call', { id: auth().currentUser.email, channelName: 'temp', token: '007eJxTYKjzDll6d0/OFbbfagrygie/mjRpz3Beu7Ruxdv17zxFW1YrMBgmmiQlWyQZGZmYW5qkJadZmpulmKWYmJqlGCelJian3F1YltwQyMiwI+YSKyMDBIL4LAwlqbkFDAwAmdUhWQ==' })
+        // } catch (error) {
+        //     console.log(error)
+        // }
 
     }
 

@@ -38,7 +38,7 @@ const Call = () => {
     const [remoteUid, setRemoteUid] = useState(0); // Uid of the remote user
     const [message, setMessage] = useState('hello user'); // Message to the user
 
-    const [remoteLeft, setRemoteLeft] = useState(false)
+
 
 
     const getPermission = async () => {
@@ -57,9 +57,7 @@ const Call = () => {
 
 
     const join = async () => {
-        if (remoteLeft) {
-            return
-        }
+
         if (isJoined) {
             return;
         }
@@ -107,7 +105,7 @@ const Call = () => {
                 console.log('error in removing callee', callee)
             }
 
-            // navigation.goBack()
+
 
         } catch (error) {
             console.log(error)
@@ -122,33 +120,12 @@ const Call = () => {
             setRemoteUid(0);
             setIsJoined(false);
             showMessage('left');
+            navigation.goBack()
 
-            // navigation.goBack()
-            // endCall();
         } catch (e) {
             console.log('++++++>', e);
         }
     };
-
-
-    useEffect(() => {
-        if (message === 'left') {
-            navigation.goBack()
-            console.log('++++++++++++++++ navigate back')
-
-        }
-    }, [message])
-
-
-
-
-    // useEffect(() => {
-    //     if (remoteLeft === true) {
-    //         console.log('User left remote')
-    //         // leave()
-    //     }
-    // }, [remoteLeft])
-
 
 
 
@@ -205,7 +182,7 @@ const Call = () => {
                 onUserOffline: (_connection, Uid) => {
                     showMessage('Remote user left the channel. uid: ' + Uid);
                     setRemoteUid(0);
-                    setRemoteLeft(true)
+
 
                 },
             });
