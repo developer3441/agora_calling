@@ -17,6 +17,7 @@ import {
 import { useNavigation, useRoute } from '@react-navigation/native';
 import firestore from '@react-native-firebase/firestore';
 import auth from '@react-native-firebase/auth';
+import { APP_ID } from "@env"
 
 const Call = () => {
     const navigation = useNavigation()
@@ -24,7 +25,7 @@ const Call = () => {
 
 
 
-    const appId = '1a4bc8b224794fcf976d6d456d3beacd';
+    const appId = APP_ID;
     const channelName = route.params.channelName;
     const token = route.params.token;
     const uid = route.params.id;

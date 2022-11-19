@@ -4,9 +4,13 @@ import auth from '@react-native-firebase/auth';
 import firestore from '@react-native-firebase/firestore';
 import { useNavigation } from '@react-navigation/native';
 import Modal from "react-native-modal";
-// import axios from 'axios'
+import { BACKEND_URL } from '@env'
+
+
 
 const Contacts = () => {
+
+
 
 
     const [contacts, setContacts] = useState([])
@@ -52,65 +56,70 @@ const Contacts = () => {
 
 
         var callerConfig = {
-            method: 'post',
-            url: `http://192.168.18.7:500/generate_token`,
+            method: 'POST',
             headers: {
+
                 'Content-Type': 'application/json'
             },
-            data: callerTokenInfo
+            body: JSON.stringify(callerTokenInfo)
         };
 
         var calleeConfig = {
-            method: 'post',
-            url: `http://192.168.18.7:500/generate_token`,
+            method: 'POST',
             headers: {
+                Accept: 'application/json',
                 'Content-Type': 'application/json'
             },
-            data: calleeTokenInfo
+            body: JSON.stringify(calleeTokenInfo)
 
         };
+
+
+
 
 
 
 
         try {
 
-            // let callerResponse = await axios(callerConfig)
-            // callerResponse = callerResponse?.data
-            // console.log('--------->caller Response', callerResponse);
+
+            let callerResponse = await fetch(`${BACKEND_URL}/generate_token`, callerConfig)
+            callerResponse = await callerResponse.json()
+            console.log(callerResponse);
 
 
-            // let calleeResponse = await axios(calleeConfig)
-            // calleeResponse = calleeResponse?.data
-            // console.log('--------->callee Response', calleeResponse);
+            let calleeResponse = await fetch(`${BACKEND_URL}/generate_token`, calleeConfig)
+            calleeResponse = await calleeResponse.json()
+            console.log(calleeResponse);
+
+            const callerData = {
+                callee: item?.id,
+                caller: userEmail,
+                type: type,
+                calling: true,
+                channelName: callerResponse?.channelName,
+                token: callerResponse?.token
+            }
+            const calleeData = {
+                callee: item?.id,
+                caller: userEmail,
+                type: type,
+                calling: true,
+                channelName: calleeResponse?.channelName,
+                token: calleeResponse?.token
+            }
+
+            await firestore().collection('calling').doc(item.id).update(
+                calleeData
+            )
+            await firestore().collection('calling').doc(auth().currentUser.email).update(
+                callerData
+            )
+
+
         } catch (error) {
-            console.log('error in token generation--->>>', error)
+            console.log(error)
         }
-
-
-
-        // try {
-
-        //     const docData = {
-        //         callee: item?.id,
-        //         caller: auth().currentUser?.email,
-        //         type: type,
-        //         calling: true,
-        //         channelName: 'first',
-        //         token: '007eJxTYFizS+svxyqf/wmyR3osuUT/TVoyTfnNdp6zxR+8U9bqLPNTYDBMNElKtkgyMjIxtzRJS06zNDdLMUsxMTVLMU5KTUxO6ZpWkdwQyMjw7F43EyMDBIL4rAxpmUXFJQwMALmlIbI='
-        //     }
-
-        //     await firestore().collection('calling').doc(item.id).update(
-        //         docData
-        //     )
-        //     await firestore().collection('calling').doc(auth().currentUser.email).update(
-        //         docData
-        //     )
-
-        //     // navigation.navigate('Call', { id: auth().currentUser.email, channelName: 'temp', token: '007eJxTYKjzDll6d0/OFbbfagrygie/mjRpz3Beu7Ruxdv17zxFW1YrMBgmmiQlWyQZGZmYW5qkJadZmpulmKWYmJqlGCelJian3F1YltwQyMiwI+YSKyMDBIL4LAwlqbkFDAwAmdUhWQ==' })
-        // } catch (error) {
-        //     console.log(error)
-        // }
 
     }
 
