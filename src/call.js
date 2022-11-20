@@ -132,8 +132,6 @@ const Content = () => {
         });
     }
 
-
-
     const getContacts = async () => {
         try {
             let tempArr = []
@@ -146,7 +144,6 @@ const Content = () => {
             console.log('-------------------->', error)
         }
     }
-
 
     const dialCall = async (item, type) => {
 
@@ -163,9 +160,6 @@ const Content = () => {
             "id": item?.id,
             "participantRole": "subscriber"
         }
-
-
-
 
         var callerConfig = {
             method: 'post',
@@ -226,13 +220,10 @@ const Content = () => {
         }
     }
 
-
     const acceptCall = async () => {
         setIncoming(false)
         init(channel, callToken, user?.email)
     }
-
-
 
     const endCall = async () => {
 
