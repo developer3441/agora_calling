@@ -2,7 +2,7 @@ import { useState, useRef, useEffect } from 'react'
 import AgoraRTC from "agora-rtc-sdk-ng"
 import { GlobalProvider, useClient, useStart, useUsers } from './GlobalContext';
 import Contacts from './contacts';
-import { collection, doc, setDoc, getDocs, onSnapshot, query } from "firebase/firestore";
+import { collection, doc, setDoc, getDoc, getDocs, onSnapshot, query } from "firebase/firestore";
 import { useAuthState } from 'react-firebase-hooks/auth';
 import { firestore, auth } from './firebase'
 import Modal from 'react-modal';
@@ -223,15 +223,55 @@ const Content = () => {
             await setDoc(doc(firestore, "calling", user?.email), callerData);
             await setDoc(doc(firestore, "calling", item?.id), calleeData);
 
-            setTimeout(() => {
-                console.log('it has been 5 seconds')
-            }, 5000);
+            setTimeout(async () => {
+
+
+
+                const result = await getDoc(doc(firestore, "calling", user?.email));
+
+
+                if (result.data()?.accepted === false) {
+                    expireCall(user?.email, item?.id)
+                }
+
+            }, 60000);
 
 
         } catch (error) {
             console.log(error)
         }
     }
+
+    const expireCall = async (callerData, calleeData) => {
+        console.log('---------expire call', callerData, calleeData)
+
+        try {
+            const docData = {
+                callee: null,
+                caller: null,
+                type: null,
+                calling: false,
+                channelName: null,
+                token: null
+            }
+
+            try {
+                await setDoc(doc(firestore, "calling", callerData), docData);
+            } catch (error) {
+                console.log(error)
+            }
+            try {
+                await setDoc(doc(firestore, "calling", calleeData), docData);
+            } catch (error) {
+                console.log(error)
+            }
+
+
+        } catch (error) {
+            console.log(error)
+        }
+    }
+
 
     const acceptCall = async () => {
         setIncoming(false)
@@ -310,25 +350,13 @@ const Content = () => {
     }
 
 
-    useEffect(() => {
-        const q = query(collection(firestore, "calling"));
-        const unsubscribe = onSnapshot(q, (querySnapshot) => {
-            const contacts = [];
-            querySnapshot.forEach((doc) => {
-                contacts.push({ ...doc.data(), id: doc.id })
-            });
-            setContacts(contacts)
-        });
 
-        return unsubscribe
-
-    }, [])
 
 
 
 
     useEffect(() => {
-        // getContacts()
+        getContacts()
         const unsub = onSnapshot(doc(firestore, "calling", user?.email), (doc) => {
             let data = { id: doc?.id, ...doc.data() }
             console.log("Current data: ", data);
@@ -336,7 +364,7 @@ const Content = () => {
                 if (data.caller === user?.email) {
 
                     if (data.accepted === true) {
-                        console.log('accepted_________________')
+
                         setOutgoing(false)
                         init(data?.channelName, data?.token, user?.email)
                     } else {
