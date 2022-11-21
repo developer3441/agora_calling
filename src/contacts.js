@@ -29,6 +29,8 @@ export default function Contacts(route) {
                 {contact.id}
             </div>
             <div style={{ display: 'flex', flexDirection: 'row', marginLeft: 10 }}>
+
+
                 <button onClick={() => route.dialCall(contact, 'audio')}>Audio</button>
                 <button onClick={() => route.dialCall(contact, 'video')} style={{ marginLeft: 10 }}>Video</button>
             </div>
@@ -47,11 +49,6 @@ export default function Contacts(route) {
 
             {/* <button onClick={() => makeCall()} >CALL</button> */}
             <button onClick={() => signOut()} >Sign Out</button>
-
-
-
-
-
         </div>
     )
 }

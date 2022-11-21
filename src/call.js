@@ -2,7 +2,7 @@ import { useState, useRef, useEffect } from 'react'
 import AgoraRTC from "agora-rtc-sdk-ng"
 import { GlobalProvider, useClient, useStart, useUsers } from './GlobalContext';
 import Contacts from './contacts';
-import { collection, doc, setDoc, getDocs, onSnapshot } from "firebase/firestore";
+import { collection, doc, setDoc, getDocs, onSnapshot, query } from "firebase/firestore";
 import { useAuthState } from 'react-firebase-hooks/auth';
 import { firestore, auth } from './firebase'
 import Modal from 'react-modal';
@@ -48,6 +48,10 @@ const Content = () => {
     const [callToken, setCallToken] = useState(null)
     const [caller, setCaller] = useState(null)
     const [callee, setCallee] = useState(null)
+    const [outgoing, setOutgoing] = useState(false)
+
+
+
 
 
     const options = {
@@ -148,7 +152,7 @@ const Content = () => {
     const dialCall = async (item, type) => {
 
 
-        console.log(process.env.REACT_APP_APPID)
+
 
         const callerTokenInfo = {
             "channelName": `${user?.email}${item?.id}`,
@@ -202,7 +206,9 @@ const Content = () => {
                 type: type,
                 calling: true,
                 channelName: callerResponse?.channelName,
-                token: callerResponse?.token
+                token: callerResponse?.token,
+                accepted: false
+
             }
             const calleeData = {
                 callee: item?.id,
@@ -210,11 +216,18 @@ const Content = () => {
                 type: type,
                 calling: true,
                 channelName: calleeResponse?.channelName,
-                token: calleeResponse?.token
+                token: calleeResponse?.token,
+                accepted: false
             }
 
             await setDoc(doc(firestore, "calling", user?.email), callerData);
             await setDoc(doc(firestore, "calling", item?.id), calleeData);
+
+            setTimeout(() => {
+                console.log('it has been 5 seconds')
+            }, 5000);
+
+
         } catch (error) {
             console.log(error)
         }
@@ -222,7 +235,33 @@ const Content = () => {
 
     const acceptCall = async () => {
         setIncoming(false)
-        init(channel, callToken, user?.email)
+
+        console.log('this is caller', caller)
+        console.log('this is callee', callee)
+        const callerData = {
+            // callee: callee,
+            // caller: user?.email,
+            // type: type,
+            // calling: true,
+            // channelName: callerResponse?.channelName,
+            // token: callerResponse?.token,
+            accepted: true
+
+        }
+        const calleeData = {
+            // callee: callee,
+            // caller: user?.email,
+            // type: type,
+            // calling: true,
+            // channelName: calleeResponse?.channelName,
+            // token: calleeResponse?.token,
+            accepted: true
+        }
+
+        await setDoc(doc(firestore, "calling", caller), callerData, { merge: true });
+        await setDoc(doc(firestore, "calling", callee), calleeData, { merge: true });
+
+        // init(channel, callToken, user?.email)
     }
 
     const endCall = async () => {
@@ -270,34 +309,68 @@ const Content = () => {
         setStart(false)
     }
 
+
     useEffect(() => {
-        getContacts()
+        const q = query(collection(firestore, "calling"));
+        const unsubscribe = onSnapshot(q, (querySnapshot) => {
+            const contacts = [];
+            querySnapshot.forEach((doc) => {
+                contacts.push({ ...doc.data(), id: doc.id })
+            });
+            setContacts(contacts)
+        });
+
+        return unsubscribe
+
+    }, [])
+
+
+
+
+    useEffect(() => {
+        // getContacts()
         const unsub = onSnapshot(doc(firestore, "calling", user?.email), (doc) => {
             let data = { id: doc?.id, ...doc.data() }
             console.log("Current data: ", data);
             if (data?.calling === true) {
                 if (data.caller === user?.email) {
 
-                    init(data?.channelName, data?.token, user?.email)
+                    if (data.accepted === true) {
+                        console.log('accepted_________________')
+                        setOutgoing(false)
+                        init(data?.channelName, data?.token, user?.email)
+                    } else {
+                        setOutgoing(true)
+                    }
+
                     setCaller(data?.caller)
                     setCallee(data?.callee)
 
+
                 } else if (data.callee === user?.email) {
-                    setIncoming(true)
-                    setChannel(data?.channelName)
-                    setCallToken(data?.token)
-                    setCaller(data?.caller)
-                    setCallee(data?.callee)
+                    if (data?.accepted === false) {
+                        setIncoming(true)
+                        setChannel(data?.channelName)
+                        setCallToken(data?.token)
+                        setCaller(data?.caller)
+                        setCallee(data?.callee)
+                    } else if (data?.accepted === true) {
+
+                        init(data?.channelName, data?.token, data?.callee)
+                    }
+
 
                 }
             } else if (data?.calling === false) {
 
 
                 setIncoming(false)
+                setOutgoing(false)
                 setChannel(null)
                 setCallToken(null)
                 setCaller(null)
                 setCallee(null)
+
                 console.log('====>>>>>>>>>>>.start outside', start)
 
                 // if (start === true) {
@@ -332,6 +405,22 @@ const Content = () => {
                 <h2>{caller}</h2>
                 <button onClick={() => acceptCall()}>Accept</button>
                 <button onClick={() => endCall()}>Decline</button>
+
+            </Modal>
+
+            <Modal
+                isOpen={outgoing}
+                // onAfterOpen={afterOpenModal}
+                // onRequestClose={closeModal}
+                style={customStyles}
+
+            >
+                <h2>{
+                    // callee
+                    'calling.....'
+                }</h2>
+                {/* <button onClick={() => acceptCall()}>Accept</button>
+                <button onClick={() => endCall()}>Decline</button> */}
 
             </Modal>
 
