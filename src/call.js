@@ -150,9 +150,31 @@ const Content = () => {
         }
     }
 
+
+    const checkAvailable = async (id) => {
+        const result = await getDoc(doc(firestore, "calling", id));
+
+        console.log(result.data())
+        if (result?.data().calling === true) {
+            console.log('Busy')
+            return false;
+
+        } else {
+            console.log('Available')
+            return true;
+        }
+    }
+
     const dialCall = async (item, type) => {
 
 
+        const online = await checkAvailable(item?.id)
+
+        if (!online) {
+
+            alert('Already in call')
+            return;
+        }
 
 
         const callerTokenInfo = {
@@ -235,7 +257,7 @@ const Content = () => {
                     expireCall(user?.email, item?.id)
                 }
 
-            }, 10000);
+            }, 60000);
 
 
         } catch (error) {
