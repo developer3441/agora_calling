@@ -49,6 +49,7 @@ const Content = () => {
     const [caller, setCaller] = useState(null)
     const [callee, setCallee] = useState(null)
     const [outgoing, setOutgoing] = useState(false)
+    const timeOut = useRef(null)
 
 
 
@@ -223,7 +224,7 @@ const Content = () => {
             await setDoc(doc(firestore, "calling", user?.email), callerData);
             await setDoc(doc(firestore, "calling", item?.id), calleeData);
 
-            setTimeout(async () => {
+            timeOut.current = setTimeout(async () => {
 
 
 
@@ -234,7 +235,7 @@ const Content = () => {
                     expireCall(user?.email, item?.id)
                 }
 
-            }, 60000);
+            }, 10000);
 
 
         } catch (error) {
@@ -364,7 +365,7 @@ const Content = () => {
                 if (data.caller === user?.email) {
 
                     if (data.accepted === true) {
-
+                        clearTimeout(timeOut.current)
                         setOutgoing(false)
                         init(data?.channelName, data?.token, user?.email)
                     } else {
@@ -383,7 +384,6 @@ const Content = () => {
                         setCaller(data?.caller)
                         setCallee(data?.callee)
                     } else if (data?.accepted === true) {
-
                         init(data?.channelName, data?.token, data?.callee)
                     }
 
@@ -399,12 +399,12 @@ const Content = () => {
                 setCaller(null)
                 setCallee(null)
 
-                console.log('====>>>>>>>>>>>.start outside', start)
+                if (timeOut.current) {
+                    clearTimeout(timeOut.current)
+                }
 
-                // if (start === true) {
-                //     console.log('====>>>>>>>>>>>.start', start)
                 leaveChannel()
-                // }
+
 
             }
 
