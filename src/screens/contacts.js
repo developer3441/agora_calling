@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react'
+import React, { useEffect, useState, useRef } from 'react'
 import { StyleSheet, Text, View, TouchableOpacity, FlatList } from 'react-native'
 import auth from '@react-native-firebase/auth';
 import firestore from '@react-native-firebase/firestore';
@@ -10,16 +10,15 @@ import { BACKEND_URL } from '@env'
 
 const Contacts = () => {
 
-
-
-
     const [contacts, setContacts] = useState([])
     const navigation = useNavigation()
     const [caller, setCaller] = useState(null)
     const [callee, setCallee] = useState(null)
     const [incoming, setIncoming] = useState(false)
+    const [outgoing, setOutgoing] = useState(false)
     const [channel, setChannel] = useState(null)
     const [callToken, setCallToken] = useState(null)
+    const timeOut = useRef(null)
 
 
 
@@ -74,21 +73,15 @@ const Contacts = () => {
 
         };
 
-
-
-
-
-
-
         try {
 
 
-            let callerResponse = await fetch(`${'http://192.168.18.22:5000'}/generate_token`, callerConfig)
+            let callerResponse = await fetch(`${'http://192.168.18.7:5000'}/generate_token`, callerConfig)
             callerResponse = await callerResponse.json()
             console.log(callerResponse);
 
 
-            let calleeResponse = await fetch(`${'http://192.168.18.22:5000'}/generate_token`, calleeConfig)
+            let calleeResponse = await fetch(`${'http://192.168.18.7:5000'}/generate_token`, calleeConfig)
             calleeResponse = await calleeResponse.json()
             console.log(calleeResponse);
 
@@ -98,7 +91,8 @@ const Contacts = () => {
                 type: type,
                 calling: true,
                 channelName: callerResponse?.channelName,
-                token: callerResponse?.token
+                token: callerResponse?.token,
+                accepted: false
             }
             const calleeData = {
                 callee: item?.id,
@@ -106,7 +100,8 @@ const Contacts = () => {
                 type: type,
                 calling: true,
                 channelName: calleeResponse?.channelName,
-                token: calleeResponse?.token
+                token: calleeResponse?.token,
+                accepted: false
             }
 
             await firestore().collection('calling').doc(item.id).update(
@@ -117,6 +112,20 @@ const Contacts = () => {
             )
 
 
+            timeOut.current = setTimeout(async () => {
+                // console.log('5 seconds passed')
+
+                const result = await firestore().collection('calling').doc(auth().currentUser.email).get()
+                console.log(result.data())
+                if (result?.data().accepted === false) {
+                    expireCall(auth().currentUser.email, item?.id)
+                }
+
+            }, 10000);
+
+
+
+
         } catch (error) {
             console.log(error)
         }
@@ -125,16 +134,77 @@ const Contacts = () => {
 
 
 
+    const expireCall = async (callerData, calleeData) => {
+        try {
+            const docData = {
+                callee: null,
+                caller: null,
+                type: null,
+                calling: false,
+                channelName: null,
+                token: null
+            }
+
+            try {
+                await firestore().collection('calling').doc(callerData).update(docData)
+            } catch (error) {
+                console.log('error in removing caller', error)
+            }
+
+            try {
+                await firestore().collection('calling').doc(calleeData).update(docData)
+            } catch (error) {
+                console.log('error in removing callee', error)
+            }
+
+
+        } catch (error) {
+            console.log(error)
+        }
+    }
+
+
     const acceptCall = async () => {
-        setIncoming(false)
-        navigation.navigate('Call', { id: auth().currentUser.email, channelName: channel, token: callToken, caller: caller, callee: callee })
+
+
+
+        try {
+            const callerData = {
+                // callee: item?.id,
+                // caller: userEmail,
+                // type: type,
+                // calling: true,
+                // channelName: callerResponse?.channelName,
+                // token: callerResponse?.token,
+                accepted: true
+            }
+            const calleeData = {
+                // callee: item?.id,
+                // caller: userEmail,
+                // type: type,
+                // calling: true,
+                // channelName: calleeResponse?.channelName,
+                // token: calleeResponse?.token,
+                accepted: true
+            }
+
+            await firestore().collection('calling').doc(callee).update(
+                calleeData
+            )
+            await firestore().collection('calling').doc(caller).update(
+                callerData
+            )
+        } catch (error) {
+            console.log(error)
+        }
+
+
     }
 
 
     const declineCall = async () => {
 
         try {
-
             const docData = {
                 callee: null,
                 caller: null,
@@ -175,15 +245,32 @@ const Contacts = () => {
                 if (data?.calling === true) {
                     if (data?.caller === auth().currentUser.email) {
 
-                        navigation.navigate('Call', { id: auth().currentUser.email, channelName: data?.channelName, token: data?.token, caller: data?.caller, callee: data?.callee })
+                        if (data?.accepted === true) {
+                            setOutgoing(false)
+                            clearTimeout(timeOut.current)
+                            navigation.navigate('Call', { id: auth().currentUser.email, channelName: data?.channelName, token: data?.token, caller: data?.caller, callee: data?.callee })
 
-                    } else if (data.callee === auth().currentUser?.email) {
+                        } else {
+                            setOutgoing(true)
+                        }
+
 
                         setCaller(data.caller)
                         setCallee(data.callee)
-                        setChannel(data?.channelName)
-                        setCallToken(data?.token)
-                        setIncoming(true)
+
+                    } else if (data.callee === auth().currentUser?.email) {
+
+                        if (data?.accepted === false) {
+                            setCaller(data.caller)
+                            setCallee(data.callee)
+                            setChannel(data?.channelName)
+                            setCallToken(data?.token)
+                            setIncoming(true)
+                        } else if (data?.accepted === true) {
+                            setIncoming(false)
+                            navigation.navigate('Call', { id: auth().currentUser.email, channelName: data?.channelName, token: data?.token, caller: data?.caller, callee: data?.callee })
+                        }
+
                     }
 
                 } else {
@@ -192,6 +279,10 @@ const Contacts = () => {
                     setChannel(null)
                     setCallToken(null)
                     setIncoming(false)
+                    setOutgoing(false)
+                    if (timeOut.current) {
+                        clearTimeout(timeOut.current)
+                    }
                 }
 
 
@@ -228,6 +319,16 @@ const Contacts = () => {
                         <TouchableOpacity onPress={() => declineCall()} style={{ width: 50, height: 50, backgroundColor: 'red', borderRadius: 50 }} />
                         <TouchableOpacity onPress={() => acceptCall()} style={{ width: 50, height: 50, backgroundColor: 'green', borderRadius: 50 }} />
                     </View>
+                </View>
+            </Modal>
+
+            <Modal isVisible={outgoing}>
+                <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+                    <Text style={{ color: 'white', fontWeight: 'bold', fontSize: 48 }}>Calling...</Text>
+                    {/* <View style={{ flexDirection: 'row', width: '100%', justifyContent: 'space-around' }}>
+                        <TouchableOpacity onPress={() => declineCall()} style={{ width: 50, height: 50, backgroundColor: 'red', borderRadius: 50 }} />
+                        <TouchableOpacity onPress={() => acceptCall()} style={{ width: 50, height: 50, backgroundColor: 'green', borderRadius: 50 }} />
+                    </View> */}
                 </View>
             </Modal>
 
