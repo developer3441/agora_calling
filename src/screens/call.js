@@ -119,6 +119,7 @@ const Call = () => {
     const leave = async () => {
         try {
             // console.log('calling leave')
+            await agoraEngineRef.current?.enableAudio();
             await agoraEngineRef.current?.leaveChannel();
             setRemoteUid(0);
             setIsJoined(false);
@@ -224,9 +225,9 @@ const Call = () => {
                 }} style={styles.button}>
                     {isMuted ? 'Unmute' : 'Mute'}
                 </Text>
-                <Text onPress={() => agoraEngineRef?.current?.switchCamera()} style={styles.button}>
+                {callType === 'video' ? <Text onPress={() => agoraEngineRef?.current?.switchCamera()} style={styles.button}>
                     Switch Camera
-                </Text>
+                </Text> : null}
                 <Text onPress={endCall} style={styles.button}>
                     Leave
                 </Text>
