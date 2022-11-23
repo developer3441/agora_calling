@@ -5,6 +5,8 @@ const { RtcTokenBuilder, RtmTokenBuilder, RtcRole, RtmRole } = require('agora-ac
 
 const tokenGenerator = async (req, res, next) => {
 
+    console.log(req.body)
+
     const { channelName, id, participantRole } = req.body
 
 
