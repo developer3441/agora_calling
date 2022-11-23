@@ -100,12 +100,12 @@ const Contacts = () => {
         try {
 
 
-            let callerResponse = await fetch(`${'http://192.168.18.7:5000'}/generate_token`, callerConfig)
+            let callerResponse = await fetch(`${BACKEND_URL}/generate_token`, callerConfig)
             callerResponse = await callerResponse.json()
             console.log(callerResponse);
 
 
-            let calleeResponse = await fetch(`${'http://192.168.18.7:5000'}/generate_token`, calleeConfig)
+            let calleeResponse = await fetch(`${BACKEND_URL}/generate_token`, calleeConfig)
             calleeResponse = await calleeResponse.json()
             console.log(calleeResponse);
 
