@@ -7,8 +7,10 @@ install! 'cocoapods', :deterministic_uuids => false
 
 
 
+
 target 'agora' do
   config = use_native_modules!
+  pod 'ReactNativeIncallManager', :path => '../node_modules/react-native-incall-manager'
   
   use_frameworks! :linkage => :static
   

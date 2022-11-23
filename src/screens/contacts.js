@@ -5,6 +5,7 @@ import firestore from '@react-native-firebase/firestore';
 import { useNavigation } from '@react-navigation/native';
 import Modal from "react-native-modal";
 import { BACKEND_URL } from '@env'
+import InCallManager from 'react-native-incall-manager';
 
 
 
@@ -258,6 +259,7 @@ const Contacts = () => {
 
 
     useEffect(() => {
+
         getContacts()
         const subscriber = firestore()
             .collection('calling')
@@ -285,12 +287,16 @@ const Contacts = () => {
                     } else if (data.callee === auth().currentUser?.email) {
 
                         if (data?.accepted === false) {
+                            InCallManager.startRingtone('_DEFAULT_');
+                            InCallManager.start();
                             setCaller(data.caller)
                             setCallee(data.callee)
                             setChannel(data?.channelName)
                             setCallToken(data?.token)
                             setIncoming(true)
                         } else if (data?.accepted === true) {
+                            InCallManager.stopRingtone();
+                            InCallManager.stop();
                             setIncoming(false)
                             navigation.navigate('Call', { id: auth().currentUser.email, channelName: data?.channelName, token: data?.token, caller: data?.caller, callee: data?.callee, type: data?.type })
                         }
@@ -298,6 +304,8 @@ const Contacts = () => {
                     }
 
                 } else {
+                    InCallManager.stopRingtone();
+                    InCallManager.stop();
                     setCaller(null)
                     setCallee(null)
                     setChannel(null)

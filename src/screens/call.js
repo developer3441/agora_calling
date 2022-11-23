@@ -14,6 +14,7 @@ import {
     RtcSurfaceView,
     ChannelProfileType,
 } from 'react-native-agora';
+import InCallManager from 'react-native-incall-manager';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import firestore from '@react-native-firebase/firestore';
 import auth from '@react-native-firebase/auth';

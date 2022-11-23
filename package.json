@@ -20,6 +20,7 @@
     "react-native": "0.70.4",
     "react-native-agora": "^4.0.0",
     "react-native-dotenv": "^3.4.2",
+    "react-native-incall-manager": "^4.0.0",
     "react-native-modal": "^13.0.1",
     "react-native-safe-area-context": "^4.4.1",
     "react-native-screens": "^3.18.2"
