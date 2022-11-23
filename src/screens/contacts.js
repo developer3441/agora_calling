@@ -34,10 +34,34 @@ const Contacts = () => {
     }
 
 
+    const checkAvailable = async (id) => {
+        const result = await firestore().collection('calling').doc(id).get()
+        console.log(result.data())
+        if (result?.data().calling === true) {
+            console.log('Busy')
+            return false;
 
-    const callOther = async (item, type = 'audio') => {
+        } else {
+            console.log('Available')
+            return true;
+        }
+    }
+
+
+
+    const callOther = async (item, type) => {
 
         const userEmail = auth()?.currentUser?.email
+
+        const online = await checkAvailable(item?.id)
+
+
+
+        if (!online) {
+            alert('Already in call')
+            return;
+        }
+
 
 
         const callerTokenInfo = {
@@ -121,7 +145,7 @@ const Contacts = () => {
                     expireCall(auth().currentUser.email, item?.id)
                 }
 
-            }, 10000);
+            }, 60000);
 
 
 
@@ -248,7 +272,7 @@ const Contacts = () => {
                         if (data?.accepted === true) {
                             setOutgoing(false)
                             clearTimeout(timeOut.current)
-                            navigation.navigate('Call', { id: auth().currentUser.email, channelName: data?.channelName, token: data?.token, caller: data?.caller, callee: data?.callee })
+                            navigation.navigate('Call', { id: auth().currentUser.email, channelName: data?.channelName, token: data?.token, caller: data?.caller, callee: data?.callee, type: data?.type })
 
                         } else {
                             setOutgoing(true)
@@ -268,7 +292,7 @@ const Contacts = () => {
                             setIncoming(true)
                         } else if (data?.accepted === true) {
                             setIncoming(false)
-                            navigation.navigate('Call', { id: auth().currentUser.email, channelName: data?.channelName, token: data?.token, caller: data?.caller, callee: data?.callee })
+                            navigation.navigate('Call', { id: auth().currentUser.email, channelName: data?.channelName, token: data?.token, caller: data?.caller, callee: data?.callee, type: data?.type })
                         }
 
                     }
@@ -301,7 +325,17 @@ const Contacts = () => {
         <View style={{ flex: 1, paddingVertical: 10, paddingHorizontal: 10 }}>
             <FlatList
                 data={contacts}
-                renderItem={({ item }) => <TouchableOpacity onPress={() => callOther(item)} style={{ padding: 10, width: '100%', backgroundColor: '#FFC0CB', marginVertical: 5, borderRadius: 10 }}><Text>{item?.id}</Text></TouchableOpacity>}
+                renderItem={({ item }) => <View style={{ padding: 10, width: '100%', backgroundColor: '#FFC0CB', marginVertical: 5, borderRadius: 10, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <Text>{item?.id}</Text>
+                    <View style={{ flexDirection: 'row' }}>
+                        <TouchableOpacity onPress={() => callOther(item, 'audio')} style={{ margin: 10, padding: 5, backgroundColor: 'skyblue' }}>
+                            <Text>{'Audio'}</Text>
+                        </TouchableOpacity>
+                        <TouchableOpacity onPress={() => callOther(item, 'video')} style={{ margin: 10, padding: 5, backgroundColor: 'skyblue' }}>
+                            <Text>{'Video'}</Text>
+                        </TouchableOpacity>
+                    </View>
+                </View>}
 
                 ListFooterComponent={() => <TouchableOpacity onPress={() => auth().signOut()} style={styles.signoutBtn}>
                     <Text

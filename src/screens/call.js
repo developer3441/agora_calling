@@ -31,6 +31,8 @@ const Call = () => {
     const uid = route.params.id;
     const caller = route.params.caller;
     const callee = route.params.callee;
+    const callType = route.params.type
+    const [isMuted, setIsMuted] = useState(false)
     const [move, setMove] = useState(false)
 
 
@@ -190,7 +192,10 @@ const Call = () => {
             await agoraEngine.initialize({
                 appId: appId,
             });
-            await agoraEngine.enableVideo();
+            if (callType === 'video') {
+                await agoraEngine.enableVideo();
+            }
+
 
             join()
 
@@ -205,14 +210,28 @@ const Call = () => {
         <SafeAreaView style={styles.main}>
             <Text style={styles.head}>Agora Video Calling Quickstart</Text>
             <View style={styles.btnContainer}>
-                <Text onPress={() => setRemoteLeft(!remoteLeft)} style={styles.button}>
-                    Join
+                <Text onPress={async () => {
+
+                    if (isMuted) {
+                        await agoraEngineRef?.current?.enableAudio()
+                        setIsMuted(false)
+                    } else {
+                        await agoraEngineRef?.current?.disableAudio()
+                        setIsMuted(true)
+                    }
+
+
+                }} style={styles.button}>
+                    {isMuted ? 'Unmute' : 'Mute'}
+                </Text>
+                <Text onPress={() => agoraEngineRef?.current?.switchCamera()} style={styles.button}>
+                    Switch Camera
                 </Text>
                 <Text onPress={endCall} style={styles.button}>
                     Leave
                 </Text>
             </View>
-            <ScrollView
+            {callType === 'video' ? <ScrollView
                 style={styles.scroll}
                 contentContainerStyle={styles.scrollContainer}>
                 {isJoined ? (
@@ -235,7 +254,13 @@ const Call = () => {
                     <Text>Waiting for a remote user to join</Text>
                 )}
                 <Text style={styles.info}>{message}</Text>
-            </ScrollView>
+            </ScrollView> :
+                <View style={{ backgroundColor: 'skyblue', flex: 1, justifyContent: 'center', alignItems: 'center', width: '100%' }}>
+                    <Text>
+                        {caller === auth()?.currentUser?.email ? callee.toString() : callee === auth()?.currentUser?.email ? caller.toString() : 'audio'}
+                    </Text>
+                </View>
+            }
         </SafeAreaView>
     );
 
