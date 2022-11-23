@@ -36,6 +36,20 @@ body {
   width: 95%;
   border-radius: 30px;
   box-shadow: var(--shadow);
+  color: #ffff;
+}
+
+.aud {
+  position: relative;
+  background-color: black;
+  height: 50%;
+  width: 95%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  border-radius: 30px;
+  box-shadow: var(--shadow);
+  color: #ffff;
 }
 
 .controls {

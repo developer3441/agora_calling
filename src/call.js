@@ -49,9 +49,8 @@ const Content = () => {
     const [caller, setCaller] = useState(null)
     const [callee, setCallee] = useState(null)
     const [outgoing, setOutgoing] = useState(false)
+    const [type, setType] = useState('audio')
     const timeOut = useRef(null)
-
-
 
 
 
@@ -64,10 +63,7 @@ const Content = () => {
         // token: '007eJxTYLj3X3XPlf0LHaykzd90lBiHFD397nBOsVH0K6N6HhfH11AFBsNEk6RkiyQjIxNzS5O05DRLc7MUsxQTU7MU46TUxOSU9e6lyQ2BjAwf33xnZGSAQBCflSEts6i4hIEBAJUsITk=',
     };
 
-    let init = async (name, token, id,) => {
-
-
-
+    let init = async (name, token, id, type) => {
 
         rtc.current.client = AgoraRTC.createClient({ mode: "rtc", codec: "vp8" });
         initClientEvents()
@@ -75,13 +71,24 @@ const Content = () => {
         // Create an audio track from the audio sampled by a microphone.
         rtc.current.localAudioTrack = await AgoraRTC.createMicrophoneAudioTrack();
         // Create a video track from the video captured by a camera.
-        rtc.current.localVideoTrack = await AgoraRTC.createCameraVideoTrack();
+        if (type === 'video') {
+            rtc.current.localVideoTrack = await AgoraRTC.createCameraVideoTrack();
+        }
         //Adding a User to the Users State
         setUsers((prevUsers) => {
-            return [...prevUsers, { uid: uid, audio: true, video: true, client: true, videoTrack: rtc.current.localVideoTrack }]
+            if (type === 'video') {
+                return [...prevUsers, { uid: uid, audio: true, video: true, client: true, videoTrack: rtc.current.localVideoTrack }]
+            } else {
+                return [...prevUsers, { uid: uid, audio: true, video: false, client: true, videoTrack: rtc.current.localVideoTrack }]
+            }
         })
         //Publishing your Streams
-        await rtc.current.client.publish([rtc.current.localAudioTrack, rtc.current.localVideoTrack]);
+        if (type === 'video') {
+            await rtc.current.client.publish([rtc.current.localAudioTrack, rtc.current.localVideoTrack]);
+        } else {
+            await rtc.current.client.publish([rtc.current.localAudioTrack]);
+        }
+
         setStart(true)
 
     }
@@ -91,6 +98,8 @@ const Content = () => {
 
     const initClientEvents = () => {
         rtc.current.client.on("user-published", async (user, mediaType) => {
+
+            console.log(`---------this is new user entered=${JSON.stringify(user)}`)
             // New User Enters
             await rtc.current.client.subscribe(user, mediaType);
 
@@ -107,6 +116,9 @@ const Content = () => {
                 remoteAudioTrack.play();
                 setUsers((prevUsers) => {
                     return (prevUsers.map((User) => {
+
+
+
                         if (User.uid === user.uid) {
                             return { ...User, audio: user.hasAudio }
                         }
@@ -363,8 +375,8 @@ const Content = () => {
         console.log('----------->in leave Channel')
 
         // Destroy the local audio and video tracks.
-        await rtc?.current?.localVideoTrack?.setEnabled(false)
         await rtc?.current?.localAudioTrack?.setEnabled(false)
+        await rtc?.current?.localVideoTrack?.setEnabled(false)
         await rtc?.current?.localAudioTrack?.close();
         await rtc?.current?.localVideoTrack?.close();
         await rtc?.current?.client?.leave();
@@ -389,7 +401,8 @@ const Content = () => {
                     if (data.accepted === true) {
                         clearTimeout(timeOut.current)
                         setOutgoing(false)
-                        init(data?.channelName, data?.token, user?.email)
+                        setType(data?.type)
+                        init(data?.channelName, data?.token, user?.email, data?.type)
                     } else {
                         setOutgoing(true)
                     }
@@ -406,7 +419,8 @@ const Content = () => {
                         setCaller(data?.caller)
                         setCallee(data?.callee)
                     } else if (data?.accepted === true) {
-                        init(data?.channelName, data?.token, data?.callee)
+                        setType(data?.type)
+                        init(data?.channelName, data?.token, data?.callee, data?.type)
                     }
 
 
@@ -420,12 +434,13 @@ const Content = () => {
                 setCallToken(null)
                 setCaller(null)
                 setCallee(null)
+                leaveChannel()
 
-                if (timeOut.current) {
-                    clearTimeout(timeOut.current)
+                if (timeOut?.current) {
+                    clearTimeout(timeOut?.current)
                 }
 
-                leaveChannel()
+
 
 
             }
@@ -442,7 +457,7 @@ const Content = () => {
 
     return (
         <div className="App">
-            {start && <Videos endCall={endCall} />}
+            {start && <Videos type={type} endCall={endCall} user={user} caller={caller} callee={callee} />}
             {!start && <Contacts contacts={contacts} dialCall={dialCall} initFunc={init} />}
 
             <Modal
@@ -488,14 +503,38 @@ const Videos = (props) => {
 
     return (
         <div id='videos'>
-            {users.length && users.map((user) => <Video endCall={props?.endCall} key={user.uid} user={user} />)}
+            {users.length && users.map((user) => {
+                if (props.type === 'video') {
+                    return <Video endCall={props?.endCall} key={user.uid} user={user} type={props?.type} userEmail={user} caller={props.caller} callee={props.callee} />
+                } else {
+                    return <Audio endCall={props?.endCall} key={user.uid} user={user} type={props?.type} userEmail={user} caller={props.caller} callee={props.callee} />
+                }
+            })}
         </div>
     )
 
 }
 
 
-export const Video = ({ user, endCall }) => {
+
+export const Audio = ({ user, endCall, type, userEmail, caller, callee }) => {
+    console.log('------------->>>>>>>>>>>>>>>loading audio', userEmail, caller, callee);
+    return (
+
+
+        <div className='aud' >
+
+            {
+                userEmail?.uid === caller ? callee?.toString() : userEmail?.uid === callee ? caller?.toString() : null
+            }
+            <Controls endCall={endCall} user={user} type={type} />
+        </div>
+    )
+}
+
+
+
+export const Video = ({ user, endCall, type }) => {
 
     const vidDiv = useRef(null)
 
@@ -517,13 +556,13 @@ export const Video = ({ user, endCall }) => {
 
     return (
         <div className='vid' ref={vidDiv} >
-            <Controls endCall={endCall} user={user} />
+            <Controls endCall={endCall} user={user} type={type} />
         </div>
     )
 }
 
 
-export const Controls = ({ user, endCall }) => {
+export const Controls = ({ user, endCall, type }) => {
 
     const setStart = useStart()[1]
     const setUsers = useUsers()[1]
@@ -568,7 +607,7 @@ export const Controls = ({ user, endCall }) => {
     return (
         <div className='controls'>
             {<p className={user.audio ? 'on' : ''} onClick={() => user.client && mute('audio', user.uid)}>Mic</p>}
-            {<p className={user.video ? 'on' : ''} onClick={() => user.client && mute('video', user.uid)}>Video</p>}
+            {type === 'video' ? <p className={user.video ? 'on' : ''} onClick={() => user.client && mute('video', user.uid)}>Video</p> : null}
             {user.client && <p onClick={() => endCall()}>Quit</p>}
         </div>
     )
