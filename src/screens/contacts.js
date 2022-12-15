@@ -37,7 +37,7 @@ const Contacts = () => {
 
     const checkAvailable = async (id) => {
         const result = await firestore().collection('calling').doc(id).get()
-        console.log(result.data())
+        console.log(result?.data())
         if (result?.data().calling === true) {
             console.log('Busy')
             return false;

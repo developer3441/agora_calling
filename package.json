@@ -23,7 +23,13 @@
     "react-native-incall-manager": "^4.0.0",
     "react-native-modal": "^13.0.1",
     "react-native-safe-area-context": "^4.4.1",
-    "react-native-screens": "^3.18.2"
+    "react-native-screens": "^3.18.2",
+    "@zegocloud/zego-uikit-prebuilt-call-rn": "^1.2.1",
+    "@zegocloud/zego-uikit-rn": "^1.2.0",
+    "react-delegate-component": "^1.0.0",
+    "react-native-gesture-handler": "^2.8.0",
+    "react-navigation": "^4.4.4",
+    "zego-express-engine-reactnative": "^0.21.0"
   },
   "devDependencies": {
     "@babel/core": "^7.12.9",
