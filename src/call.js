@@ -7,6 +7,8 @@ import { useAuthState } from 'react-firebase-hooks/auth';
 import { firestore, auth } from './firebase'
 import Modal from 'react-modal';
 import axios from 'axios'
+import ReactAudioPlayer from 'react-audio-player';
+import tune from './tune.mp3'
 
 const customStyles = {
     content: {
@@ -22,9 +24,11 @@ const customStyles = {
 
 
 const Call = () => {
+
     return (
         <GlobalProvider>
             <Content />
+
         </GlobalProvider>
     );
 }
@@ -387,9 +391,6 @@ const Content = () => {
 
 
 
-
-
-
     useEffect(() => {
         getContacts()
         const unsub = onSnapshot(doc(firestore, "calling", user?.email), (doc) => {
@@ -450,10 +451,6 @@ const Content = () => {
 
 
     }, [])
-
-
-
-
 
     return (
         <div className="App">
