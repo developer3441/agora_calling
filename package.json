@@ -6,6 +6,7 @@
     "@testing-library/jest-dom": "^5.16.5",
     "@testing-library/react": "^13.4.0",
     "@testing-library/user-event": "^13.5.0",
+    "@videosdk.live/react-sdk": "^0.1.55",
     "agora-react-uikit": "^1.1.0",
     "agora-rtc-react": "github:AgoraIO-Community/agora-rtc-react#v1.0.0",
     "agora-rtc-sdk-ng": "^4.15.0",
@@ -17,7 +18,8 @@
     "react-dom": "^18.2.0",
     "react-firebase-hooks": "^5.1.0",
     "react-modal": "^3.16.1",
-    "react-router-dom": "^6.4.3",
+    "react-player": "^2.11.0",
+    "react-router-dom": "^6.4.5",
     "react-scripts": "5.0.1",
     "web-vitals": "^2.1.4"
   },

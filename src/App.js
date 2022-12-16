@@ -5,6 +5,7 @@ import Contacts from './contacts'
 import Auth from './auth'
 import { useAuthState } from 'react-firebase-hooks/auth';
 import { auth } from './firebase'
+import CallScreen from './callScreen'
 
 function App() {
 
@@ -20,7 +21,17 @@ function App() {
 
   if (user) {
     return (
-      <Call />
+      // <Call />c
+      // <CallScreen />
+      <div>
+        <Routes>
+          <Route exact path="/" element={<Contacts />} />
+
+
+          <Route path="/callScreen" element={<CallScreen />} />
+
+        </Routes>
+      </div>
     )
   }
   if (!user) {
