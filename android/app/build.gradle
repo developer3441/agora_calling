@@ -251,7 +251,10 @@ android {
 
 dependencies {
     implementation fileTree(dir: "libs", include: ["*.jar"])
-    implementation project(':react-native-incall-manager')
+    // implementation project(':react-native-incall-manager')
+    implementation project(':rnfgservice')
+    implementation project(':rnwebrtc')
+    implementation project(':rnincallmanager')
 
     //noinspection GradleDynamicVersion
     implementation "com.facebook.react:react-native:+"  // From node_modules

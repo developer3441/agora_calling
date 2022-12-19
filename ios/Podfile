@@ -10,7 +10,8 @@ install! 'cocoapods', :deterministic_uuids => false
 
 target 'agora' do
   config = use_native_modules!
-  pod 'ReactNativeIncallManager', :path => '../node_modules/react-native-incall-manager'
+  
+  pod 'react-native-webrtc', :path => '../node_modules/@videosdk.live/react-native-webrtc'
   
   use_frameworks! :linkage => :static
   

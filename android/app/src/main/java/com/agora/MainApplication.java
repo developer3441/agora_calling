@@ -12,7 +12,10 @@ import com.facebook.soloader.SoLoader;
 import com.app.calling.agora.newarchitecture.MainApplicationReactNativeHost;
 import java.lang.reflect.InvocationTargetException;
 import java.util.List;
-import com.zxcpoiu.incallmanager.InCallManagerPackage;
+//import com.zxcpoiu.incallmanager.InCallManagerPackage;
+import live.videosdk.rnfgservice.ForegroundServicePackage;
+import live.videosdk.rnincallmanager.InCallManagerPackage;
+import live.videosdk.rnwebrtc.WebRTCModulePackage;
 
 public class MainApplication extends Application implements ReactApplication {
 
@@ -30,6 +33,9 @@ public class MainApplication extends Application implements ReactApplication {
           // Packages that cannot be autolinked yet can be added manually here, for example:
           // packages.add(new MyReactNativePackage());
           // packages.add(new InCallManagerPackage());
+          packages.add(new ForegroundServicePackage());
+          packages.add(new InCallManagerPackage());
+          packages.add(new WebRTCModulePackage());
           return packages;
         }
 

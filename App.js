@@ -5,6 +5,7 @@ import Auth from './src/screens/auth'
 import Call from './src/screens/call'
 import Contacts from './src/screens/contacts';
 import AppNav from './src/navigation/appNav';
+import Videosdk from './src/screens/videosdk';
 
 export default function App() {
   // Set an initializing state whilst Firebase connects
@@ -34,5 +35,6 @@ export default function App() {
   return (
 
     <AppNav />
+    // <Videosdk />
   );
 }

@@ -5,7 +5,9 @@ import firestore from '@react-native-firebase/firestore';
 import { useNavigation } from '@react-navigation/native';
 import Modal from "react-native-modal";
 import { BACKEND_URL } from '@env'
-import InCallManager from 'react-native-incall-manager';
+import { createMeeting, getToken } from "../utils/api";
+import InCallManager from '@videosdk.live/react-native-incallmanager';
+
 
 
 
@@ -18,7 +20,7 @@ const Contacts = () => {
     const [incoming, setIncoming] = useState(false)
     const [outgoing, setOutgoing] = useState(false)
     const [channel, setChannel] = useState(null)
-    const [callToken, setCallToken] = useState(null)
+    const [callMeetingId, setcallMeetingId] = useState(null)
     const timeOut = useRef(null)
 
 
@@ -65,75 +67,79 @@ const Contacts = () => {
 
 
 
-        const callerTokenInfo = {
-            "channelName": `${userEmail}${item?.id}`,
-            "id": userEmail,
-            "participantRole": "publisher"
-        }
-        const calleeTokenInfo = {
-            "channelName": `${userEmail}${item?.id}`,
-            "id": item?.id,
-            "participantRole": "subscriber"
-        }
+        // const callerTokenInfo = {
+        //     "channelName": `${userEmail}${item?.id}`,
+        //     "id": userEmail,
+        //     "participantRole": "publisher"
+        // }
+        // const calleeTokenInfo = {
+        //     "channelName": `${userEmail}${item?.id}`,
+        //     "id": item?.id,
+        //     "participantRole": "subscriber"
+        // }
 
 
 
 
-        var callerConfig = {
-            method: 'POST',
-            headers: {
+        // var callerConfig = {
+        //     method: 'POST',
+        //     headers: {
 
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify(callerTokenInfo)
-        };
+        //         'Content-Type': 'application/json'
+        //     },
+        //     body: JSON.stringify(callerTokenInfo)
+        // };
 
-        var calleeConfig = {
-            method: 'POST',
-            headers: {
-                Accept: 'application/json',
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify(calleeTokenInfo)
+        // var calleeConfig = {
+        //     method: 'POST',
+        //     headers: {
+        //         Accept: 'application/json',
+        //         'Content-Type': 'application/json'
+        //     },
+        //     body: JSON.stringify(calleeTokenInfo)
 
-        };
+        // };
 
         try {
 
 
-            let callerResponse = await fetch(`${BACKEND_URL}/generate_token`, callerConfig)
-            callerResponse = await callerResponse.json()
-            console.log(callerResponse);
+            // let callerResponse = await fetch(`${BACKEND_URL}/generate_token`, callerConfig)
+            // callerResponse = await callerResponse.json()
+            // console.log(callerResponse);
 
 
-            let calleeResponse = await fetch(`${BACKEND_URL}/generate_token`, calleeConfig)
-            calleeResponse = await calleeResponse.json()
-            console.log(calleeResponse);
+            // let calleeResponse = await fetch(`${BACKEND_URL}/generate_token`, calleeConfig)
+            // calleeResponse = await calleeResponse.json()
+            // console.log(calleeResponse);
 
-            const callerData = {
+            const token = await getToken()
+            const meetingId = await createMeeting({ token })
+
+            const callData = {
                 callee: item?.id,
                 caller: userEmail,
                 type: type,
                 calling: true,
-                channelName: callerResponse?.channelName,
-                token: callerResponse?.token,
+                token: token,
+                // channelName: callerResponse?.channelName,
+                meetingId: meetingId,
                 accepted: false
             }
-            const calleeData = {
-                callee: item?.id,
-                caller: userEmail,
-                type: type,
-                calling: true,
-                channelName: calleeResponse?.channelName,
-                token: calleeResponse?.token,
-                accepted: false
-            }
+            // const calleeData = {
+            //     callee: item?.id,
+            //     caller: userEmail,
+            //     type: type,
+            //     calling: true,
+            //     channelName: calleeResponse?.channelName,
+            //     token: calleeResponse?.token,
+            //     accepted: false
+            // }
 
             await firestore().collection('calling').doc(item.id).update(
-                calleeData
+                callData
             )
             await firestore().collection('calling').doc(auth().currentUser.email).update(
-                callerData
+                callData
             )
 
 
@@ -166,8 +172,8 @@ const Contacts = () => {
                 caller: null,
                 type: null,
                 calling: false,
-                channelName: null,
-                token: null
+                // channelName: null,
+                meetingId: null
             }
 
             try {
@@ -235,8 +241,8 @@ const Contacts = () => {
                 caller: null,
                 type: null,
                 calling: false,
-                channelName: null,
-                token: null
+                // channelName: null,
+                meetingId: null
             }
 
             try {
@@ -274,7 +280,7 @@ const Contacts = () => {
                         if (data?.accepted === true) {
                             setOutgoing(false)
                             clearTimeout(timeOut.current)
-                            navigation.navigate('Call', { id: auth().currentUser.email, channelName: data?.channelName, token: data?.token, caller: data?.caller, callee: data?.callee, type: data?.type })
+                            navigation.navigate('CallScreen', { id: auth().currentUser.email, meetingId: data?.meetingId, token: data?.token, caller: data?.caller, callee: data?.callee, type: data?.type })
 
                         } else {
                             setOutgoing(true)
@@ -292,13 +298,13 @@ const Contacts = () => {
                             setCaller(data.caller)
                             setCallee(data.callee)
                             setChannel(data?.channelName)
-                            setCallToken(data?.token)
+                            setcallMeetingId(data?.meetingId)
                             setIncoming(true)
                         } else if (data?.accepted === true) {
                             InCallManager.stopRingtone();
                             InCallManager.stop();
                             setIncoming(false)
-                            navigation.navigate('Call', { id: auth().currentUser.email, channelName: data?.channelName, token: data?.token, caller: data?.caller, callee: data?.callee, type: data?.type })
+                            navigation.navigate('CallScreen', { id: auth().currentUser.email, meetingId: data?.meetingId, token: data?.token, caller: data?.caller, callee: data?.callee, type: data?.type })
                         }
 
                     }
@@ -309,7 +315,7 @@ const Contacts = () => {
                     setCaller(null)
                     setCallee(null)
                     setChannel(null)
-                    setCallToken(null)
+                    setcallMeetingId(null)
                     setIncoming(false)
                     setOutgoing(false)
                     if (timeOut.current) {
