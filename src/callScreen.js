@@ -14,6 +14,7 @@ import { useAuthState } from 'react-firebase-hooks/auth';
 import { doc, setDoc, } from "firebase/firestore";
 
 import { firestore, auth } from './firebase'
+import Contacts from "./contacts";
 
 function JoinScreen({ getMeetingAndToken }) {
     const [meetingId, setMeetingId] = useState(null);
@@ -182,6 +183,7 @@ function CallScreen() {
     const { state } = useLocation();
     const [user] = useAuthState(auth);
     const [meetingId, setMeetingId] = useState(state?.meetingId);
+    const [token, setToken] = useState(state?.token)
     const navigate = useNavigate()
 
 
@@ -195,7 +197,7 @@ function CallScreen() {
         setMeetingId(meetingId);
     };
 
-    return authToken && meetingId ? (
+    return token && meetingId ? (
         <MeetingProvider
             // joinWithoutUserInteraction
             config={{
@@ -204,7 +206,7 @@ function CallScreen() {
                 webcamEnabled: false,
                 name: "C.V. Raman",
             }}
-            token={authToken}>
+            token={token}>
             <MeetingConsumer
                 {...{
                     onMeetingLeft: async () => {
@@ -224,7 +226,7 @@ function CallScreen() {
                             try {
                                 await setDoc(doc(firestore, "calling", user?.email), docData);
                                 console.log('cleared')
-                                navigate(-1)
+                                navigate('/')
                             } catch (error) {
                                 console.log(error)
                             }
@@ -242,6 +244,8 @@ function CallScreen() {
             </MeetingConsumer>
         </MeetingProvider>
     ) : (
+
+        // <Contacts setMeetingId={setMeetingId} />
         <JoinScreen getMeetingAndToken={getMeetingAndToken} />
     );
 }

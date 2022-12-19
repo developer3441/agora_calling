@@ -5,7 +5,7 @@ import { useSignOut, useAuthState } from 'react-firebase-hooks/auth';
 import { collection, doc, setDoc, getDoc, getDocs, onSnapshot, query } from "firebase/firestore";
 
 import { firestore, auth } from './firebase'
-import { authToken, createMeeting } from "./api";
+import { getToken, createMeeting } from "./api";
 
 
 import { GlobalProvider, useClient, useStart, useUsers } from './GlobalContext';
@@ -32,7 +32,8 @@ const customStyles = {
 // Modal.setAppElement('#yourAppElement');
 
 
-export default function Contacts(route) {
+export default function Contacts(props) {
+
 
     const navigate = useNavigate();
     const [signOut, loading, error] = useSignOut(auth);
@@ -105,7 +106,8 @@ export default function Contacts(route) {
             // calleeResponse = calleeResponse?.data
             // console.log(calleeResponse);
 
-            let meetingId = await createMeeting({ token: authToken })
+            const token = await getToken()
+            let meetingId = await createMeeting({ token })
 
 
 
@@ -114,7 +116,7 @@ export default function Contacts(route) {
                 caller: user?.email,
                 type: type,
                 calling: true,
-
+                token: token,
                 meetingId: meetingId,
                 accepted: false
 
@@ -251,7 +253,8 @@ export default function Contacts(route) {
                         clearTimeout(timeOut.current)
                         setOutgoing(false)
                         setType(data?.type)
-                        navigate('/callScreen', { state: { meetingId: data?.meetingId, user: user?.email, type: data?.type } });
+                        // props.setMeetingId(data?.meetingId)
+                        navigate('/callScreen', { state: { meetingId: data?.meetingId, token: data?.token, user: user?.email, type: data?.type } });
                         // init(data?.channelName, data?.meetingId, user?.email, data?.type)
                     } else {
                         setOutgoing(true)
@@ -270,7 +273,8 @@ export default function Contacts(route) {
                         setCallee(data?.callee)
                     } else if (data?.accepted === true) {
                         setType(data?.type)
-                        navigate('/callScreen', { state: { meetingId: data?.meetingId, user: data?.callee, type: data?.type } });
+                        // props.setMeetingId(data?.meetingId)
+                        navigate('/callScreen', { state: { meetingId: data?.meetingId, token: data?.token, user: data?.callee, type: data?.type } });
                     }
 
 

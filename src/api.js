@@ -1,8 +1,8 @@
 const API_BASE_URL = "https://api.videosdk.live";
-const VIDEOSDK_TOKEN = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJhcGlrZXkiOiI0ZTk5ZDY0OS0zNGZlLTQzYTUtYTNmYS04YTc5YmU0NThjNjEiLCJwZXJtaXNzaW9ucyI6WyJhbGxvd19qb2luIl0sImlhdCI6MTY3MTExNTY3NCwiZXhwIjoxNjcxNzIwNDc0fQ.KP59PMhD-gK-b6Ia07-P6_I_BSAhdItdVyoqVe3qqKg'
-const API_AUTH_URL = process.env.REACT_APP_AUTH_URL;
+const VIDEOSDK_TOKEN = null
+const API_AUTH_URL = 'http://localhost:9000';
 
-export const authToken = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJhcGlrZXkiOiI0ZTk5ZDY0OS0zNGZlLTQzYTUtYTNmYS04YTc5YmU0NThjNjEiLCJwZXJtaXNzaW9ucyI6WyJhbGxvd19qb2luIl0sImlhdCI6MTY3MTExNTY3NCwiZXhwIjoxNjcxNzIwNDc0fQ.KP59PMhD-gK-b6Ia07-P6_I_BSAhdItdVyoqVe3qqKg'
+export const authToken = null
 export const getToken = async () => {
     if (VIDEOSDK_TOKEN && API_AUTH_URL) {
         console.error(
@@ -22,7 +22,14 @@ export const getToken = async () => {
 };
 
 export const createMeeting = async ({ token }) => {
+
+
+
     const url = `${API_BASE_URL}/v2/rooms`;
+
+
+
+
     const options = {
         method: "POST",
         headers: { Authorization: token, "Content-Type": "application/json" },
