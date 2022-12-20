@@ -100,6 +100,8 @@ function JoinScreen(props) {
 
 
 function ControlsContainer({ join, leave, toggleWebcam, changeWebcam, toggleMic, end }) {
+
+
     return (
         <View
             style={{
@@ -149,7 +151,9 @@ function ControlsContainer({ join, leave, toggleWebcam, changeWebcam, toggleMic,
 
 
 function ParticipantView({ participantId }) {
+
     const { webcamStream, webcamOn } = useParticipant(participantId);
+
     return (webcamOn && webcamStream) ?
         <RTCView
             streamURL={new MediaStream([webcamStream?.track]).toURL()}
@@ -174,6 +178,7 @@ function ParticipantView({ participantId }) {
 }
 
 function ParticipantList({ participants }) {
+
     return participants.length > 0 ? (
         <FlatList
             data={participants}
@@ -200,14 +205,21 @@ function MeetingView() {
     const { join, leave, toggleWebcam, toggleMic, changeWebcam, participants, end } = useMeeting({});
 
 
+    const [participantsArrId, setParticipantsArrId] = useState([...participants.keys()])
 
-
-
-
-    const participantsArrId = [...participants.keys()]; // Add this 
 
     useEffect(() => {
+        setParticipantsArrId([...participants.keys()])
+    }, [participants])
+
+
+    // let participantsArrId = [...participants.keys()]; // Add this 
+
+
+    useEffect(() => {
+        console.log('calling join', participantsArrId)
         join()
+
     }, [])
 
 
@@ -228,11 +240,15 @@ function MeetingView() {
 
 export default function Videosdk({ route }) {
 
-    // console.log(route.params)
+    console.log(route.params)
 
     const navigation = useNavigation()
     const [meetingId, setMeetingId] = useState(route?.params?.meetingId);
     const [token, setToken] = useState(route?.params?.token)
+    const [video, setVideo] = useState(route?.params?.type === 'video' ? true : false)
+    console.log(video)
+
+    console.log('++++++++++++++++', token, ":", meetingId)
 
     const getMeetingId = async (id) => {
         const meetingId = id == null ? await createMeeting({ token }) : id;
@@ -242,57 +258,64 @@ export default function Videosdk({ route }) {
 
 
 
-    return token && meetingId ? (
-        <SafeAreaView style={{ flex: 1, backgroundColor: "#F6F6FF" }}>
-            <MeetingProvider
-                config={{
-                    meetingId,
-                    micEnabled: true,
-                    webcamEnabled: true,
 
-                    name: "Test User",
-                }}
-                token={token}>
-                <MeetingConsumer
-                    {...{
-                        onMeetingLeft: async () => {
-                            console.log('left meeting')
+    // token && meetingId ? (
 
-                            try {
+    return <SafeAreaView style={{ flex: 1, backgroundColor: "#F6F6FF" }}>
+        <MeetingProvider
+            joinWithoutUserInteraction
+            config={{
+                meetingId,
+                micEnabled: true,
+                webcamEnabled: true,
 
-                                const docData = {
-                                    callee: null,
-                                    caller: null,
-                                    type: null,
-                                    calling: false,
+                name: "Test User",
 
-                                    meetingId: null
-                                }
+            }}
 
-                                try {
-                                    await firestore().collection('calling').doc(auth().currentUser.email).update(docData)
-                                    console.log('cleared')
-                                    navigation.goBack()
-                                } catch (error) {
-                                    console.log('error in removing caller', error)
-                                }
+            token={token}>
+            <MeetingConsumer
 
+                {...{
+                    onMeetingLeft: async () => {
+                        console.log('left meeting')
 
+                        try {
 
-
-                            } catch (error) {
-                                console.log(error)
+                            const docData = {
+                                callee: null,
+                                caller: null,
+                                type: null,
+                                calling: false,
+                                accepted: false,
+                                meetingId: null
                             }
 
-                        },
-                    }}
-                >
-                    {() => <MeetingView />}
-                </MeetingConsumer>
+                            try {
+                                await firestore().collection('calling').doc(auth().currentUser.email).update(docData)
+                                console.log('cleared')
+                                navigation.goBack()
+                            } catch (error) {
+                                console.log('error in removing caller', error)
+                            }
 
-            </MeetingProvider>
-        </SafeAreaView>
-    ) : (
-        <JoinScreen getMeetingId={getMeetingId} />
-    );
+
+
+
+                        } catch (error) {
+                            console.log(error)
+                        }
+
+                    },
+                }}
+            >
+                {() => <MeetingView />}
+            </MeetingConsumer>
+
+        </MeetingProvider>
+    </SafeAreaView>
+    // ) 
+    // : (
+    //     <JoinScreen getMeetingId={getMeetingId} />
+    // );
 }

@@ -1,6 +1,6 @@
 const API_BASE_URL = "https://api.videosdk.live";
 export const token = null
-const API_AUTH_URL = 'http://localhost:9000';
+const API_AUTH_URL = 'http://192.168.18.7:9000';
 
 export const authToken = null
 export const getToken = async () => {
