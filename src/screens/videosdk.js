@@ -99,7 +99,7 @@ function JoinScreen(props) {
 }
 
 
-function ControlsContainer({ join, leave, toggleWebcam, changeWebcam, toggleMic, end }) {
+function ControlsContainer({ endCall, join, leave, toggleWebcam, changeWebcam, toggleMic, end }) {
 
 
     return (
@@ -109,37 +109,38 @@ function ControlsContainer({ join, leave, toggleWebcam, changeWebcam, toggleMic,
                 flexDirection: "row",
                 justifyContent: "space-between",
             }}>
-            <Button
+            {/* <Button
                 onPress={() => {
                     join();
                 }}
                 buttonText={"Join"}
                 backgroundColor={"#1178F8"}
-            />
+            /> */}
             <Button
                 onPress={() => {
                     toggleWebcam();
                 }}
-                buttonText={"Toggle Webcam"}
+                buttonText={"X cam"}
                 backgroundColor={"#1178F8"}
             />
-            {/* <Button
+            <Button
                 onPress={() => {
                     changeWebcam();
                 }}
-                buttonText={"Change Webcam"}
+                buttonText={"Change"}
                 backgroundColor={"#1178F8"}
-            /> */}
+            />
             <Button
                 onPress={() => {
                     toggleMic();
                 }}
-                buttonText={"Toggle Mic"}
+                buttonText={"X Mic"}
                 backgroundColor={"#1178F8"}
             />
             <Button
                 onPress={() => {
-                    end();
+                    endCall();
+                    // end();
                     // leave();
                 }}
                 buttonText={"Leave"}
@@ -199,13 +200,57 @@ function ParticipantList({ participants }) {
     );
 }
 
-function MeetingView() {
+function MeetingView({ caller, callee }) {
     // Get `participants` from useMeeting Hook
-    // const navigation = useNavigation()
+
+    const navigation = useNavigation()
     const { join, leave, toggleWebcam, toggleMic, changeWebcam, participants, end } = useMeeting({});
 
 
     const [participantsArrId, setParticipantsArrId] = useState([...participants.keys()])
+
+
+    const endCall = async () => {
+        console.log('endCall');
+
+        try {
+
+            const docData = {
+                callee: null,
+                caller: null,
+                type: null,
+                calling: false,
+                channelName: null,
+                token: null,
+                meetingId: null,
+                accepted: false
+            }
+
+            try {
+                await firestore().collection('calling').doc(caller).update(docData)
+            } catch (error) {
+                console.log('error in removing caller', error)
+            }
+
+            try {
+                await firestore().collection('calling').doc(callee).update(docData)
+            } catch (error) {
+                console.log('error in removing callee', callee)
+            }
+
+
+
+        } catch (error) {
+            console.log(error)
+        }
+    }
+
+
+
+    const leaveCall = () => {
+        leave();
+        navigation.goBack()
+    }
 
 
     useEffect(() => {
@@ -217,16 +262,33 @@ function MeetingView() {
 
 
     useEffect(() => {
-        console.log('calling join', participantsArrId)
-        join()
+        console.log('-------->>>>>>>>>>calling join', participantsArrId)
+        // join()
+
+        const subscriber = firestore()
+            .collection('calling')
+            .doc(auth().currentUser.email)
+            .onSnapshot(documentSnapshot => {
+                let data = { id: documentSnapshot.id, ...documentSnapshot.data() };
+
+                if (data?.calling === false) {
+                    console.log('in listener')
+                    leaveCall()
+                }
+            });
+
+        // Stop listening for updates when no longer required
+
+        return () => subscriber();
 
     }, [])
 
 
     return (
-        <View style={{ flex: 1, backgroundColor: 'red' }}>
+        <View style={{ flex: 1, backgroundColor: '#ffff' }}>
             <ParticipantList participants={participantsArrId} />
             <ControlsContainer
+                endCall={endCall}
                 join={join}
                 leave={leave}
                 toggleWebcam={toggleWebcam}
@@ -245,10 +307,10 @@ export default function Videosdk({ route }) {
     const navigation = useNavigation()
     const [meetingId, setMeetingId] = useState(route?.params?.meetingId);
     const [token, setToken] = useState(route?.params?.token)
-    const [video, setVideo] = useState(route?.params?.type === 'video' ? true : false)
-    console.log(video)
+    const [webcamEnabled, setWebcamEnabled] = useState(route?.params?.type === 'video' ? true : false)
 
-    console.log('++++++++++++++++', token, ":", meetingId)
+
+
 
     const getMeetingId = async (id) => {
         const meetingId = id == null ? await createMeeting({ token }) : id;
@@ -257,65 +319,31 @@ export default function Videosdk({ route }) {
     };
 
 
+    return token && meetingId ? (
+        <SafeAreaView style={{ flex: 1, backgroundColor: "#F6F6f6" }}>
+            <MeetingProvider
+                joinWithoutUserInteraction
+                config={{
+                    meetingId,
+                    micEnabled: true,
+                    webcamEnabled: webcamEnabled,
 
+                    name: auth()?.currentUser?.email,
 
-    // token && meetingId ? (
-
-    return <SafeAreaView style={{ flex: 1, backgroundColor: "#F6F6FF" }}>
-        <MeetingProvider
-            joinWithoutUserInteraction
-            config={{
-                meetingId,
-                micEnabled: true,
-                webcamEnabled: true,
-
-                name: "Test User",
-
-            }}
-
-            token={token}>
-            <MeetingConsumer
-
-                {...{
-                    onMeetingLeft: async () => {
-                        console.log('left meeting')
-
-                        try {
-
-                            const docData = {
-                                callee: null,
-                                caller: null,
-                                type: null,
-                                calling: false,
-                                accepted: false,
-                                meetingId: null
-                            }
-
-                            try {
-                                await firestore().collection('calling').doc(auth().currentUser.email).update(docData)
-                                console.log('cleared')
-                                navigation.goBack()
-                            } catch (error) {
-                                console.log('error in removing caller', error)
-                            }
-
-
-
-
-                        } catch (error) {
-                            console.log(error)
-                        }
-
-                    },
                 }}
-            >
-                {() => <MeetingView />}
-            </MeetingConsumer>
 
-        </MeetingProvider>
-    </SafeAreaView>
-    // ) 
-    // : (
-    //     <JoinScreen getMeetingId={getMeetingId} />
-    // );
+                token={token}>
+                <MeetingConsumer
+
+
+                >
+                    {() => <MeetingView caller={route?.params?.caller} callee={route?.params?.callee} />}
+                </MeetingConsumer>
+
+            </MeetingProvider>
+        </SafeAreaView>
+    )
+        : (
+            <JoinScreen getMeetingId={getMeetingId} />
+        );
 }
